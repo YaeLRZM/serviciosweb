@@ -2,48 +2,49 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
+    protected $fillable = ['id', 'nombre', 'password', 'rol'];
+
+    protected $hidden = ['password'];
+
+    protected $casts = [
+        'id' => 'integer',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    public static function fromArray(array $data): self
+    {
+        $user = new self();
+        $user->id = $data['id'] ?? null;
+        $user->nombre = $data['nombre'] ?? null;
+        $user->password = $data['password'] ?? null;
+        $user->rol = $data['rol'] ?? null;
+        return $user;
+    }
+
+    public function toArray(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'id' => $this->id,
+            'nombre' => $this->nombre,
+            'password' => $this->password,
+            'rol' => $this->rol,
         ];
     }
 }

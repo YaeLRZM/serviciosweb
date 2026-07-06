@@ -1,7 +1,5 @@
 <?php
 
-namespace App\Http\Controllers;
-
 /**
  * @OA\Info(
  *     title="API Rest - CRUD Usuarios y Artículos",
@@ -18,7 +16,7 @@ namespace App\Http\Controllers;
  * @OA\Components(
  *     @OA\SecurityScheme(
  *         type="http",
- *         description="Login con email y password para obtener el token JWT",
+ *         description="Login con usuario y contraseña para obtener el token JWT",
  *         name="Token JWT",
  *         in="header",
  *         scheme="bearer",
@@ -27,7 +25,3 @@ namespace App\Http\Controllers;
  *     )
  * )
  */
-abstract class Controller
-{
-    //
-}
