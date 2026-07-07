@@ -100,31 +100,51 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-Route::group([], function () {
-    Route::get('/users', function () {
-        $storage = new \App\Services\JsonStorageService();
-        $users = $storage->read('users.json');
-        return response()->json(
-            collect($users)->map(function ($user) {
-                unset($user['password']);
-                return $user;
-            })->values()->all()
-        );
-    });
+// Rutas públicas (solo lectura)
+Route::get('/users', function () {
+    $storage = new \App\Services\JsonStorageService();
+    $users = $storage->read('users.json');
+    return response()->json(
+        collect($users)->map(function ($user) {
+            unset($user['password']);
+            return $user;
+        })->values()->all()
+    );
+});
 
-    Route::get('/users/{id}', function ($id) {
-        $storage = new \App\Services\JsonStorageService();
-        $users = $storage->read('users.json');
-        $user = collect($users)->firstWhere('id', (int)$id);
+Route::get('/users/{id}', function ($id) {
+    $storage = new \App\Services\JsonStorageService();
+    $users = $storage->read('users.json');
+    $user = collect($users)->firstWhere('id', (int)$id);
 
-        if (!$user) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
-        }
+    if (!$user) {
+        return response()->json(['message' => 'Usuario no encontrado'], 404);
+    }
 
-        unset($user['password']);
-        return response()->json($user);
-    });
+    unset($user['password']);
+    return response()->json($user);
+});
 
+Route::get('/articles', function () {
+    $storage = new \App\Services\JsonStorageService();
+    return response()->json($storage->read('articles.json'));
+});
+
+Route::get('/articles/{id}', function ($id) {
+    $storage = new \App\Services\JsonStorageService();
+    $articles = $storage->read('articles.json');
+    $article = collect($articles)->firstWhere('id', (int)$id);
+
+    if (!$article) {
+        return response()->json(['message' => 'Artículo no encontrado'], 404);
+    }
+
+    return response()->json($article);
+});
+
+// Rutas protegidas (requieren JWT)
+Route::middleware('auth:api')->group(function () {
+    // Usuarios
     Route::put('/users/{id}', function (\Illuminate\Http\Request $request, $id) {
         $storage = new \App\Services\JsonStorageService();
         $users = $storage->read('users.json');
@@ -162,11 +182,7 @@ Route::group([], function () {
         return response()->json(['message' => 'Usuario eliminado'], 200);
     });
 
-    Route::get('/articles', function () {
-        $storage = new \App\Services\JsonStorageService();
-        return response()->json($storage->read('articles.json'));
-    });
-
+    // Artículos
     Route::post('/articles', function (\Illuminate\Http\Request $request) {
         $storage = new \App\Services\JsonStorageService();
         $input = $request->all();
@@ -190,18 +206,6 @@ Route::group([], function () {
             'message' => 'Artículo creado exitosamente',
             'article' => $article,
         ], 201);
-    });
-
-    Route::get('/articles/{id}', function ($id) {
-        $storage = new \App\Services\JsonStorageService();
-        $articles = $storage->read('articles.json');
-        $article = collect($articles)->firstWhere('id', (int)$id);
-
-        if (!$article) {
-            return response()->json(['message' => 'Artículo no encontrado'], 404);
-        }
-
-        return response()->json($article);
     });
 
     Route::put('/articles/{id}', function (\Illuminate\Http\Request $request, $id) {

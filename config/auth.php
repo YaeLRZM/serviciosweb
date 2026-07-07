@@ -45,7 +45,7 @@ return [
 
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'users',
+            'provider' => 'users_json',
         ],
     ],
 
@@ -70,6 +70,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'users_json' => [
+            'driver' => 'json',
         ],
 
         // 'users' => [
