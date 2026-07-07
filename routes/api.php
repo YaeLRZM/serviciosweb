@@ -142,104 +142,107 @@ Route::get('/articles/{id}', function ($id) {
     return response()->json($article);
 });
 
-// Rutas protegidas (requieren JWT)
+// Rutas protegidas con autenticación JWT
 Route::middleware('auth:api')->group(function () {
-    // Usuarios
-    Route::put('/users/{id}', function (\Illuminate\Http\Request $request, $id) {
-        $storage = new \App\Services\JsonStorageService();
-        $users = $storage->read('users.json');
-        $input = $request->all();
+    // Rutas protegidas: solo ADMIN puede crear, actualizar y eliminar
+    Route::middleware('role:admin')->group(function () {
+        // Usuarios
+        Route::put('/users/{id}', function (\Illuminate\Http\Request $request, $id) {
+            $storage = new \App\Services\JsonStorageService();
+            $users = $storage->read('users.json');
+            $input = $request->all();
 
-        foreach ($users as &$user) {
-            if ($user['id'] == $id) {
-                if (!empty($input['nombre'])) $user['nombre'] = $input['nombre'];
-                if (!empty($input['password'])) $user['password'] = \Illuminate\Support\Facades\Hash::make($input['password']);
-                if (!empty($input['rol'])) $user['rol'] = $input['rol'];
+            foreach ($users as &$user) {
+                if ($user['id'] == $id) {
+                    if (!empty($input['nombre'])) $user['nombre'] = $input['nombre'];
+                    if (!empty($input['password'])) $user['password'] = \Illuminate\Support\Facades\Hash::make($input['password']);
+                    if (!empty($input['rol'])) $user['rol'] = $input['rol'];
 
-                $storage->write('users.json', $users);
+                    $storage->write('users.json', $users);
 
-                unset($user['password']);
-                return response()->json([
-                    'message' => 'Usuario actualizado',
-                    'user' => $user,
-                ], 200);
+                    unset($user['password']);
+                    return response()->json([
+                        'message' => 'Usuario actualizado',
+                        'user' => $user,
+                    ], 200);
+                }
             }
-        }
 
-        return response()->json(['message' => 'Usuario no encontrado'], 404);
-    });
-
-    Route::delete('/users/{id}', function ($id) {
-        $storage = new \App\Services\JsonStorageService();
-        $users = $storage->read('users.json');
-
-        $newUsers = array_filter($users, fn($u) => $u['id'] != $id);
-        if (count($newUsers) === count($users)) {
             return response()->json(['message' => 'Usuario no encontrado'], 404);
-        }
+        });
 
-        $storage->write('users.json', array_values($newUsers));
-        return response()->json(['message' => 'Usuario eliminado'], 200);
-    });
+        Route::delete('/users/{id}', function ($id) {
+            $storage = new \App\Services\JsonStorageService();
+            $users = $storage->read('users.json');
 
-    // Artículos
-    Route::post('/articles', function (\Illuminate\Http\Request $request) {
-        $storage = new \App\Services\JsonStorageService();
-        $input = $request->all();
-
-        if (empty($input['nombre']) || empty($input['precio'])) {
-            return response()->json(['error' => 'Missing required fields'], 400);
-        }
-
-        $articles = $storage->read('articles.json');
-
-        $article = [
-            'id' => empty($articles) ? 1 : max(array_column($articles, 'id')) + 1,
-            'nombre' => $input['nombre'],
-            'precio' => (float)$input['precio'],
-        ];
-
-        $articles[] = $article;
-        $storage->write('articles.json', $articles);
-
-        return response()->json([
-            'message' => 'Artículo creado exitosamente',
-            'article' => $article,
-        ], 201);
-    });
-
-    Route::put('/articles/{id}', function (\Illuminate\Http\Request $request, $id) {
-        $storage = new \App\Services\JsonStorageService();
-        $articles = $storage->read('articles.json');
-        $input = $request->all();
-
-        foreach ($articles as &$article) {
-            if ($article['id'] == $id) {
-                if (!empty($input['nombre'])) $article['nombre'] = $input['nombre'];
-                if (!empty($input['precio'])) $article['precio'] = (float)$input['precio'];
-
-                $storage->write('articles.json', $articles);
-
-                return response()->json([
-                    'message' => 'Artículo actualizado',
-                    'article' => $article,
-                ], 200);
+            $newUsers = array_filter($users, fn($u) => $u['id'] != $id);
+            if (count($newUsers) === count($users)) {
+                return response()->json(['message' => 'Usuario no encontrado'], 404);
             }
-        }
 
-        return response()->json(['message' => 'Artículo no encontrado'], 404);
-    });
+            $storage->write('users.json', array_values($newUsers));
+            return response()->json(['message' => 'Usuario eliminado'], 200);
+        });
 
-    Route::delete('/articles/{id}', function ($id) {
-        $storage = new \App\Services\JsonStorageService();
-        $articles = $storage->read('articles.json');
+        // Artículos
+        Route::post('/articles', function (\Illuminate\Http\Request $request) {
+            $storage = new \App\Services\JsonStorageService();
+            $input = $request->all();
 
-        $newArticles = array_filter($articles, fn($a) => $a['id'] != $id);
-        if (count($newArticles) === count($articles)) {
+            if (empty($input['nombre']) || empty($input['precio'])) {
+                return response()->json(['error' => 'Missing required fields'], 400);
+            }
+
+            $articles = $storage->read('articles.json');
+
+            $article = [
+                'id' => empty($articles) ? 1 : max(array_column($articles, 'id')) + 1,
+                'nombre' => $input['nombre'],
+                'precio' => (float)$input['precio'],
+            ];
+
+            $articles[] = $article;
+            $storage->write('articles.json', $articles);
+
+            return response()->json([
+                'message' => 'Artículo creado exitosamente',
+                'article' => $article,
+            ], 201);
+        });
+
+        Route::put('/articles/{id}', function (\Illuminate\Http\Request $request, $id) {
+            $storage = new \App\Services\JsonStorageService();
+            $articles = $storage->read('articles.json');
+            $input = $request->all();
+
+            foreach ($articles as &$article) {
+                if ($article['id'] == $id) {
+                    if (!empty($input['nombre'])) $article['nombre'] = $input['nombre'];
+                    if (!empty($input['precio'])) $article['precio'] = (float)$input['precio'];
+
+                    $storage->write('articles.json', $articles);
+
+                    return response()->json([
+                        'message' => 'Artículo actualizado',
+                        'article' => $article,
+                    ], 200);
+                }
+            }
+
             return response()->json(['message' => 'Artículo no encontrado'], 404);
-        }
+        });
 
-        $storage->write('articles.json', array_values($newArticles));
-        return response()->json(['message' => 'Artículo eliminado'], 200);
+        Route::delete('/articles/{id}', function ($id) {
+            $storage = new \App\Services\JsonStorageService();
+            $articles = $storage->read('articles.json');
+
+            $newArticles = array_filter($articles, fn($a) => $a['id'] != $id);
+            if (count($newArticles) === count($articles)) {
+                return response()->json(['message' => 'Artículo no encontrado'], 404);
+            }
+
+            $storage->write('articles.json', array_values($newArticles));
+            return response()->json(['message' => 'Artículo eliminado'], 200);
+        });
     });
 });
