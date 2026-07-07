@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente API REST - CORS Test</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cliente API REST</h1>
+            <p>Consumiendo API desde puerto 3000 (CORS habilitado)</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" onclick="switchTab('auth')">Autenticación</button>
+            <button class="tab-button" onclick="switchTab('articles')">Artículos</button>
+            <button class="tab-button" onclick="switchTab('users')">Usuarios</button>
+            <button class="tab-button" onclick="switchTab('status')">Estado</button>
+        </nav>
+
+        <!-- TAB: Autenticación -->
+        <section id="auth" class="tab-content active">
+            <h2>Autenticación</h2>
+
+            <div class="card">
+                <h3>Registro</h3>
+                <div class="form-group">
+                    <input type="text" id="regNombre" placeholder="Nombre usuario" class="input">
+                    <input type="password" id="regPassword" placeholder="Contraseña" class="input">
+                    <select id="regRol" class="input">
+                        <option value="user">Usuario (user)</option>
+                        <option value="admin">Administrador (admin)</option>
+                    </select>
+                    <button onclick="register()" class="btn btn-primary">Registrarse</button>
+                </div>
+                <div id="regResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Login</h3>
+                <div class="form-group">
+                    <input type="text" id="loginNombre" placeholder="Nombre usuario" class="input">
+                    <input type="password" id="loginPassword" placeholder="Contraseña" class="input">
+                    <button onclick="login()" class="btn btn-primary">Iniciar Sesión</button>
+                </div>
+                <div id="loginResponse" class="response"></div>
+                <div id="tokenInfo" class="token-info" style="display:none;">
+                    <h4>Token Activo</h4>
+                    <p id="tokenDetails"></p>
+                    <button onclick="logout()" class="btn btn-danger">Cerrar Sesión</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: Artículos -->
+        <section id="articles" class="tab-content">
+            <h2>Gestión de Artículos</h2>
+
+            <div class="card">
+                <h3>Crear Artículo</h3>
+                <div class="form-group">
+                    <input type="text" id="artNombre" placeholder="Nombre artículo" class="input">
+                    <input type="number" id="artPrecio" placeholder="Precio" class="input" step="0.01">
+                    <button onclick="createArticle()" class="btn btn-primary">Crear</button>
+                </div>
+                <div id="createArtResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Listar Artículos</h3>
+                <button onclick="getArticles()" class="btn btn-secondary">Obtener Artículos</button>
+                <div id="articlesResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Actualizar Artículo</h3>
+                <div class="form-group">
+                    <input type="number" id="updateArtId" placeholder="ID del artículo" class="input">
+                    <input type="text" id="updateArtNombre" placeholder="Nuevo nombre" class="input">
+                    <input type="number" id="updateArtPrecio" placeholder="Nuevo precio" class="input" step="0.01">
+                    <button onclick="updateArticle()" class="btn btn-primary">Actualizar</button>
+                </div>
+                <div id="updateArtResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Eliminar Artículo</h3>
+                <div class="form-group">
+                    <input type="number" id="deleteArtId" placeholder="ID del artículo" class="input">
+                    <button onclick="deleteArticle()" class="btn btn-danger">Eliminar</button>
+                </div>
+                <div id="deleteArtResponse" class="response"></div>
+            </div>
+        </section>
+
+        <!-- TAB: Usuarios -->
+        <section id="users" class="tab-content">
+            <h2>Gestión de Usuarios</h2>
+
+            <div class="card">
+                <h3>Listar Usuarios</h3>
+                <button onclick="getUsers()" class="btn btn-secondary">Obtener Usuarios</button>
+                <div id="usersResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Obtener Usuario por ID</h3>
+                <div class="form-group">
+                    <input type="number" id="getUserId" placeholder="ID del usuario" class="input">
+                    <button onclick="getUser()" class="btn btn-secondary">Obtener</button>
+                </div>
+                <div id="getUserResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Actualizar Usuario</h3>
+                <div class="form-group">
+                    <input type="number" id="updateUserId" placeholder="ID del usuario" class="input">
+                    <input type="text" id="updateUserNombre" placeholder="Nuevo nombre" class="input">
+                    <input type="password" id="updateUserPassword" placeholder="Nueva contraseña" class="input">
+                    <select id="updateUserRol" class="input">
+                        <option value="">Sin cambios</option>
+                        <option value="user">Usuario (user)</option>
+                        <option value="admin">Administrador (admin)</option>
+                    </select>
+                    <button onclick="updateUser()" class="btn btn-primary">Actualizar</button>
+                </div>
+                <div id="updateUserResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Eliminar Usuario</h3>
+                <div class="form-group">
+                    <input type="number" id="deleteUserId" placeholder="ID del usuario" class="input">
+                    <button onclick="deleteUser()" class="btn btn-danger">Eliminar</button>
+                </div>
+                <div id="deleteUserResponse" class="response"></div>
+            </div>
+        </section>
+
+        <!-- TAB: Estado -->
+        <section id="status" class="tab-content">
+            <h2>Estado de la API</h2>
+
+            <div class="card">
+                <h3>Información del Sistema</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>API URL:</label>
+                        <span>http://localhost:8000</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Cliente URL:</label>
+                        <span>http://localhost:3000</span>
+                    </div>
+                    <div class="info-item">
+                        <label>CORS:</label>
+                        <span class="status-ok">✓ Habilitado</span>
+                    </div>
+                    <div class="info-item">
+                        <label>JWT TTL:</label>
+                        <span>2 minutos</span>
+                    </div>
+                </div>
+                <button onclick="checkApiStatus()" class="btn btn-secondary">Verificar Estado API</button>
+                <div id="statusResponse" class="response"></div>
+            </div>
+
+            <div class="card">
+                <h3>Usuarios de Prueba</h3>
+                <div class="test-users">
+                    <div class="user-card">
+                        <h4>👤 Usuario Regular</h4>
+                        <p><strong>Usuario:</strong> testuser</p>
+                        <p><strong>Contraseña:</strong> testpass123</p>
+                        <p><strong>Rol:</strong> user</p>
+                        <p class="info">Solo puede ver artículos</p>
+                    </div>
+                    <div class="user-card admin">
+                        <h4>🔐 Administrador</h4>
+                        <p><strong>Usuario:</strong> admin_user</p>
+                        <p><strong>Contraseña:</strong> admin123</p>
+                        <p><strong>Rol:</strong> admin</p>
+                        <p class="info">Acceso completo</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Consola de Logs</h3>
+                <div id="logs" class="logs"></div>
+                <button onclick="clearLogs()" class="btn btn-secondary">Limpiar Logs</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
