@@ -2,65 +2,46 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreArticuloRequest;
-use App\Http\Requests\UpdateArticuloRequest;
+use App\Http\Controllers\Controller;
 use App\Models\Articulo;
+use Illuminate\Http\Request;
 
 class ArticuloController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
     public function index()
     {
-        //
+        $this->authorize('verArticulos');
+        return Articulo::all();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
+        $this->authorize('crearArticulos');
+        return Articulo::create($request->validated());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreArticuloRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Articulo $articulo)
     {
-        //
+        $this->authorize('verArticulos');
+        return $articulo;
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Articulo $articulo)
+    public function update(Request $request, Articulo $articulo)
     {
-        //
+        $this->authorize('editarArticulos');
+        $articulo->update($request->validated());
+        return $articulo;
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateArticuloRequest $request, Articulo $articulo)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Articulo $articulo)
     {
-        //
+        $this->authorize('eliminarArticulos');
+        $articulo->delete();
+        return response()->noContent();
     }
 }

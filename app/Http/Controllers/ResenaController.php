@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreResenaRequest;
 use App\Http\Requests\UpdateResenaRequest;
 use App\Models\Resena;
