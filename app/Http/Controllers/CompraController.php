@@ -14,7 +14,7 @@ class CompraController extends Controller
      */
     public function index()
     {
-        //
+        return Compra::all();
     }
 
     /**
@@ -22,7 +22,7 @@ class CompraController extends Controller
      */
     public function create()
     {
-        //
+        return Compra::create($request->validated());
     }
 
     /**
@@ -30,7 +30,7 @@ class CompraController extends Controller
      */
     public function store(StoreCompraRequest $request)
     {
-        //
+        return Compra::create($request->validated());
     }
 
     /**
@@ -38,7 +38,7 @@ class CompraController extends Controller
      */
     public function show(Compra $compra)
     {
-        //
+        return $compra;
     }
 
     /**
@@ -46,7 +46,7 @@ class CompraController extends Controller
      */
     public function edit(Compra $compra)
     {
-        //
+        return $compra;
     }
 
     /**
@@ -54,7 +54,8 @@ class CompraController extends Controller
      */
     public function update(UpdateCompraRequest $request, Compra $compra)
     {
-        //
+        $compra->update($request->validated());
+        return $compra;
     }
 
     /**
@@ -62,6 +63,7 @@ class CompraController extends Controller
      */
     public function destroy(Compra $compra)
     {
-        //
+        $resena->delete();
+        return response()->noContent();
     }
 }
