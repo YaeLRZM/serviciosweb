@@ -9,4 +9,10 @@ class Resena extends Model
 {
     /** @use HasFactory<\Database\Factories\ResenaFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'titulo',
+        'contenido',
+        'puntuacion',
+    ];
 }

@@ -9,4 +9,11 @@ class Compra extends Model
 {
     /** @use HasFactory<\Database\Factories\CompraFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'articulo_id',
+        'cantidad',
+        'precio_unitario',
+    ];
 }

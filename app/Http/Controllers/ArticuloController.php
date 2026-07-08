@@ -3,26 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreArticuloRequest;
+use App\Http\Requests\UpdateArticuloRequest;
 use App\Models\Articulo;
-use Illuminate\Http\Request;
 
 class ArticuloController extends Controller
 {
-    public function index()
+    public function create()
     {
         $usuarioActivo = auth()->user();
-        if ($usuarioActivo && $usuarioActivo->can('verArticulos')) {
-            return Articulo::all();
+        if ($usuarioActivo && $usuarioActivo->can('crearArticulos')) {
+            return response()->json([
+                'message' => 'Formulario para crear artículos',
+            ]);
         }
-        return response()->json(['message' => 'No tienes permiso para ver los artículos.'], 403);
+
+        return response()->json(['message' => 'No tienes permiso para crear artículos.'], 403);
     }
 
-    public function store(Request $request)
+    public function index()
     {
-        if (!auth()->user()->can('crearArticulos')) {
-            return response()->json(['message' => 'No tienes permiso para crear artículos.'], 403);
+        // $usuarioActivo = auth()->user();
+        // if ($usuarioActivo && $usuarioActivo->can('verArticulos')) {
+        //     }
+        //     return response()->json(['message' => 'No tienes permiso para ver los artículos.'], 403);
+        return Articulo::all();
+    }
+
+    public function store(StoreArticuloRequest $request)
+    {
+        $usuarioActivo = auth()->user();
+        if ($usuarioActivo && $usuarioActivo->can('crearArticulos')) {
+            return Articulo::create($request->validated());
         }
-        return Articulo::create($request->validated());
+        return response()->json(['message' => 'No tienes permiso para crear artículos.'], 403);
     }
 
     public function show(Articulo $articulo)
@@ -33,7 +47,7 @@ class ArticuloController extends Controller
         return $articulo;
     }
 
-    public function update(Request $request, Articulo $articulo)
+    public function update(UpdateArticuloRequest $request, Articulo $articulo)
     {
         if (!auth()->user()->can('editarArticulos')) {
             return response()->json(['message' => 'No tienes permiso para editar artículos.'], 403);

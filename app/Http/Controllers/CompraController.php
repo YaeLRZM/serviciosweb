@@ -63,7 +63,7 @@ class CompraController extends Controller
      */
     public function destroy(Compra $compra)
     {
-        $resena->delete();
+        $compra->delete();
         return response()->noContent();
     }
 }

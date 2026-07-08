@@ -10,7 +10,7 @@ use OpenApi\Attributes as OA;
     description: 'Documentación Swagger de la API con autenticación JWT.'
 )]
 #[OA\Server(
-    url: 'http://localhost/api',
+    url: '/',
     description: 'Servidor local de la API'
 )]
 #[OA\SecurityScheme(
@@ -138,7 +138,7 @@ use OpenApi\Attributes as OA;
 class ApiDocumentation
 {
     #[OA\Post(
-        path: '/login',
+        path: '/api/login',
         tags: ['Auth'],
         summary: 'Iniciar sesión y obtener JWT',
         requestBody: new OA\RequestBody(
@@ -158,7 +158,7 @@ class ApiDocumentation
     {
     }
     #[OA\Get(
-        path: '/me',
+        path: '/api/me',
         tags: ['Auth'],
         summary: 'Obtener el usuario autenticado',
         security: [['bearerAuth' => []]],
@@ -176,7 +176,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/logout',
+        path: '/api/logout',
         tags: ['Auth'],
         summary: 'Cerrar sesión y revocar el token',
         security: [['bearerAuth' => []]],
@@ -190,7 +190,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/refresh',
+        path: '/api/refresh',
         tags: ['Auth'],
         summary: 'Renovar el JWT',
         security: [['bearerAuth' => []]],
@@ -214,7 +214,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/articulos',
+        path: '/api/articulos',
         tags: ['Articulos'],
         summary: 'Listar artículos',
         security: [['bearerAuth' => []]],
@@ -231,7 +231,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/articulos',
+        path: '/api/articulos',
         tags: ['Articulos'],
         summary: 'Crear artículo',
         security: [['bearerAuth' => []]],
@@ -252,7 +252,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/articulos/{articulo}',
+        path: '/api/articulos/{articulo}',
         tags: ['Articulos'],
         summary: 'Obtener un artículo',
         security: [['bearerAuth' => []]],
@@ -272,7 +272,7 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/articulos/{articulo}',
+        path: '/api/articulos/{articulo}',
         tags: ['Articulos'],
         summary: 'Actualizar artículo',
         security: [['bearerAuth' => []]],
@@ -296,7 +296,7 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/articulos/{articulo}',
+        path: '/api/articulos/{articulo}',
         tags: ['Articulos'],
         summary: 'Eliminar artículo',
         security: [['bearerAuth' => []]],
@@ -312,7 +312,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/resenas',
+        path: '/api/resenas',
         tags: ['Resenas'],
         summary: 'Listar reseñas',
         security: [['bearerAuth' => []]],
@@ -329,7 +329,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/resenas',
+        path: '/api/resenas',
         tags: ['Resenas'],
         summary: 'Crear reseña',
         security: [['bearerAuth' => []]],
@@ -350,7 +350,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/resenas/{resena}',
+        path: '/api/resenas/{resena}',
         tags: ['Resenas'],
         summary: 'Obtener una reseña',
         security: [['bearerAuth' => []]],
@@ -370,7 +370,7 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/resenas/{resena}',
+        path: '/api/resenas/{resena}',
         tags: ['Resenas'],
         summary: 'Actualizar reseña',
         security: [['bearerAuth' => []]],
@@ -394,7 +394,7 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/resenas/{resena}',
+        path: '/api/resenas/{resena}',
         tags: ['Resenas'],
         summary: 'Eliminar reseña',
         security: [['bearerAuth' => []]],
@@ -410,7 +410,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/usuarios',
+        path: '/api/usuarios',
         tags: ['Usuarios'],
         summary: 'Listar usuarios',
         security: [['bearerAuth' => []]],
@@ -427,7 +427,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/usuarios',
+        path: '/api/usuarios',
         tags: ['Usuarios'],
         summary: 'Crear usuario',
         security: [['bearerAuth' => []]],
@@ -447,7 +447,7 @@ class ApiDocumentation
     {
     }
     #[OA\Get(
-        path: '/usuarios/{usuario}',
+        path: '/api/usuarios/{usuario}',
         tags: ['Usuarios'],
         summary: 'Obtener un usuario',
         security: [['bearerAuth' => []]],
@@ -467,7 +467,7 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/usuarios/{usuario}',
+        path: '/api/usuarios/{usuario}',
         tags: ['Usuarios'],
         summary: 'Actualizar usuario',
         security: [['bearerAuth' => []]],
@@ -491,7 +491,7 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/usuarios/{usuario}',
+        path: '/api/usuarios/{usuario}',
         tags: ['Usuarios'],
         summary: 'Eliminar usuario',
         security: [['bearerAuth' => []]],
@@ -507,7 +507,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/compras',
+        path: '/api/compras',
         tags: ['Compras'],
         summary: 'Listar compras',
         security: [['bearerAuth' => []]],
@@ -524,7 +524,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/compras',
+        path: '/api/compras',
         tags: ['Compras'],
         summary: 'Crear compra',
         security: [['bearerAuth' => []]],
@@ -544,7 +544,7 @@ class ApiDocumentation
     {
     }
     #[OA\Get(
-        path: '/compras/{compra}',
+        path: '/api/compras/{compra}',
         tags: ['Compras'],
         summary: 'Obtener una compra',
         security: [['bearerAuth' => []]],
@@ -564,7 +564,7 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/compras/{compra}',
+        path: '/api/compras/{compra}',
         tags: ['Compras'],
         summary: 'Actualizar compra',
         security: [['bearerAuth' => []]],
@@ -588,7 +588,7 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/compras/{compra}',
+        path: '/api/compras/{compra}',
         tags: ['Compras'],
         summary: 'Eliminar compra',
         security: [['bearerAuth' => []]],

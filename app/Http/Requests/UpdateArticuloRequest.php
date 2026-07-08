@@ -12,7 +12,7 @@ class UpdateArticuloRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,10 @@ class UpdateArticuloRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nombre' => ['required', 'string', 'max:255'],
+            'descripcion' => ['nullable', 'string'],
+            'precio' => ['required', 'numeric', 'min:0'],
+            'stock' => ['required', 'integer', 'min:0'],
         ];
     }
 }
