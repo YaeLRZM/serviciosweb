@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Articulo;
+use App\Models\Resena;
+use App\Models\Compra;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -26,5 +29,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesSeeder::class
         ]);
+
+        Articulo::factory(20)->create();
+        Resena::factory(30)->create();
+        Compra::factory(15)->create();
     }
 }

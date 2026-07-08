@@ -18,7 +18,10 @@ class ArticuloFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'nombre' => $this->faker->word(),
+            'descripcion' => $this->faker->sentence(),
+            'precio' => $this->faker->randomFloat(2, 10, 100),
+            'stock' => $this->faker->numberBetween(0, 100),
         ];
     }
 }

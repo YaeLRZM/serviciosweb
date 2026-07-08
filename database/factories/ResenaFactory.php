@@ -18,7 +18,9 @@ class ResenaFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'titulo' => $this->faker->sentence(),
+            'contenido' => $this->faker->paragraph(),
+            'puntuacion' => $this->faker->numberBetween(1, 5),
         ];
     }
 }

@@ -28,6 +28,44 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'UserUpsertRequest',
+    required: ['name', 'email', 'password'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', example: 'Admin'),
+        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@correo.com'),
+        new OA\Property(property: 'password', type: 'string', format: 'password', example: 'secret123'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ArticuloUpsertRequest',
+    required: ['nombre', 'precio', 'stock'],
+    properties: [
+        new OA\Property(property: 'nombre', type: 'string', example: 'Laptop'),
+        new OA\Property(property: 'descripcion', type: 'string', nullable: true, example: 'Equipo portátil de alto rendimiento'),
+        new OA\Property(property: 'precio', type: 'number', format: 'float', example: 999.99),
+        new OA\Property(property: 'stock', type: 'integer', example: 10),
+    ]
+)]
+#[OA\Schema(
+    schema: 'ResenaUpsertRequest',
+    required: ['titulo', 'puntuacion'],
+    properties: [
+        new OA\Property(property: 'titulo', type: 'string', example: 'Excelente compra'),
+        new OA\Property(property: 'contenido', type: 'string', nullable: true, example: 'El producto llegó en perfectas condiciones.'),
+        new OA\Property(property: 'puntuacion', type: 'integer', example: 5),
+    ]
+)]
+#[OA\Schema(
+    schema: 'CompraUpsertRequest',
+    required: ['user_id', 'articulo_id', 'cantidad', 'precio_unitario'],
+    properties: [
+        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+        new OA\Property(property: 'articulo_id', type: 'integer', example: 1),
+        new OA\Property(property: 'cantidad', type: 'integer', example: 2),
+        new OA\Property(property: 'precio_unitario', type: 'number', format: 'float', example: 499.99),
+    ]
+)]
+#[OA\Schema(
     schema: 'TokenResponse',
     properties: [
         new OA\Property(property: 'access_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'),
@@ -49,35 +87,50 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'User',
+    required: ['name', 'email'],
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'name', type: 'string', example: 'Admin'),
         new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@correo.com'),
-        new OA\Property(property: 'email_verified_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'email_verified_at', type: 'string', format: 'date-time', nullable: true, example: '2026-07-06T12:00:00Z'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
 #[OA\Schema(
     schema: 'Articulo',
+    required: ['nombre', 'precio', 'stock'],
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'nombre', type: 'string', example: 'Laptop'),
+        new OA\Property(property: 'descripcion', type: 'string', nullable: true, example: 'Equipo portátil de alto rendimiento'),
+        new OA\Property(property: 'precio', type: 'number', format: 'float', example: 999.99),
+        new OA\Property(property: 'stock', type: 'integer', example: 10),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
 #[OA\Schema(
     schema: 'Resena',
+    required: ['titulo', 'puntuacion'],
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'titulo', type: 'string', example: 'Excelente compra'),
+        new OA\Property(property: 'contenido', type: 'string', nullable: true, example: 'El producto llegó en perfectas condiciones.'),
+        new OA\Property(property: 'puntuacion', type: 'integer', example: 5),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
 #[OA\Schema(
     schema: 'Compra',
+    required: ['user_id', 'articulo_id', 'cantidad', 'precio_unitario'],
     properties: [
         new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'user_id', type: 'integer', example: 1),
+        new OA\Property(property: 'articulo_id', type: 'integer', example: 1),
+        new OA\Property(property: 'cantidad', type: 'integer', example: 2),
+        new OA\Property(property: 'precio_unitario', type: 'number', format: 'float', example: 499.99),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
     ]
@@ -85,7 +138,7 @@ use OpenApi\Attributes as OA;
 class ApiDocumentation
 {
     #[OA\Post(
-        path: '/api/login',
+        path: '/login',
         tags: ['Auth'],
         summary: 'Iniciar sesión y obtener JWT',
         requestBody: new OA\RequestBody(
@@ -104,9 +157,8 @@ class ApiDocumentation
     public function login(): void
     {
     }
-
     #[OA\Get(
-        path: '/api/me',
+        path: '/me',
         tags: ['Auth'],
         summary: 'Obtener el usuario autenticado',
         security: [['bearerAuth' => []]],
@@ -124,7 +176,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/api/logout',
+        path: '/logout',
         tags: ['Auth'],
         summary: 'Cerrar sesión y revocar el token',
         security: [['bearerAuth' => []]],
@@ -138,7 +190,7 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/api/refresh',
+        path: '/refresh',
         tags: ['Auth'],
         summary: 'Renovar el JWT',
         security: [['bearerAuth' => []]],
@@ -162,7 +214,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/api/articulos',
+        path: '/articulos',
         tags: ['Articulos'],
         summary: 'Listar artículos',
         security: [['bearerAuth' => []]],
@@ -179,10 +231,14 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/api/articulos',
+        path: '/articulos',
         tags: ['Articulos'],
         summary: 'Crear artículo',
         security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ArticuloUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -196,12 +252,12 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/api/articulos/{articulo}',
+        path: '/articulos/{articulo}',
         tags: ['Articulos'],
         summary: 'Obtener un artículo',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'articulo', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'articulo', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
@@ -216,13 +272,17 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/api/articulos/{articulo}',
+        path: '/articulos/{articulo}',
         tags: ['Articulos'],
         summary: 'Actualizar artículo',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'articulo', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'articulo', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ArticuloUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -236,12 +296,12 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/api/articulos/{articulo}',
+        path: '/articulos/{articulo}',
         tags: ['Articulos'],
         summary: 'Eliminar artículo',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'articulo', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'articulo', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(response: 204, description: 'Artículo eliminado'),
@@ -252,7 +312,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/api/resenas',
+        path: '/resenas',
         tags: ['Resenas'],
         summary: 'Listar reseñas',
         security: [['bearerAuth' => []]],
@@ -269,10 +329,14 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/api/resenas',
+        path: '/resenas',
         tags: ['Resenas'],
         summary: 'Crear reseña',
         security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ResenaUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -286,12 +350,12 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/api/resenas/{resena}',
+        path: '/resenas/{resena}',
         tags: ['Resenas'],
         summary: 'Obtener una reseña',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'resena', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'resena', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
@@ -306,13 +370,17 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/api/resenas/{resena}',
+        path: '/resenas/{resena}',
         tags: ['Resenas'],
         summary: 'Actualizar reseña',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'resena', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'resena', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/ResenaUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -326,12 +394,12 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/api/resenas/{resena}',
+        path: '/resenas/{resena}',
         tags: ['Resenas'],
         summary: 'Eliminar reseña',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'resena', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'resena', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(response: 204, description: 'Reseña eliminada'),
@@ -342,7 +410,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/api/usuarios',
+        path: '/usuarios',
         tags: ['Usuarios'],
         summary: 'Listar usuarios',
         security: [['bearerAuth' => []]],
@@ -359,10 +427,14 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/api/usuarios',
+        path: '/usuarios',
         tags: ['Usuarios'],
         summary: 'Crear usuario',
         security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/UserUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -374,14 +446,13 @@ class ApiDocumentation
     public function usuariosStore(): void
     {
     }
-
     #[OA\Get(
-        path: '/api/usuarios/{usuario}',
+        path: '/usuarios/{usuario}',
         tags: ['Usuarios'],
         summary: 'Obtener un usuario',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'usuario', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'usuario', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
@@ -396,13 +467,17 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/api/usuarios/{usuario}',
+        path: '/usuarios/{usuario}',
         tags: ['Usuarios'],
         summary: 'Actualizar usuario',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'usuario', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'usuario', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/UserUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -416,12 +491,12 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/api/usuarios/{usuario}',
+        path: '/usuarios/{usuario}',
         tags: ['Usuarios'],
         summary: 'Eliminar usuario',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'usuario', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'usuario', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(response: 204, description: 'Usuario eliminado'),
@@ -432,7 +507,7 @@ class ApiDocumentation
     }
 
     #[OA\Get(
-        path: '/api/compras',
+        path: '/compras',
         tags: ['Compras'],
         summary: 'Listar compras',
         security: [['bearerAuth' => []]],
@@ -449,10 +524,14 @@ class ApiDocumentation
     }
 
     #[OA\Post(
-        path: '/api/compras',
+        path: '/compras',
         tags: ['Compras'],
         summary: 'Crear compra',
         security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/CompraUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -464,14 +543,13 @@ class ApiDocumentation
     public function comprasStore(): void
     {
     }
-
     #[OA\Get(
-        path: '/api/compras/{compra}',
+        path: '/compras/{compra}',
         tags: ['Compras'],
         summary: 'Obtener una compra',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'compra', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'compra', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(
@@ -486,13 +564,17 @@ class ApiDocumentation
     }
 
     #[OA\Put(
-        path: '/api/compras/{compra}',
+        path: '/compras/{compra}',
         tags: ['Compras'],
         summary: 'Actualizar compra',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'compra', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'compra', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(ref: '#/components/schemas/CompraUpsertRequest')
+        ),
         responses: [
             new OA\Response(
                 response: 200,
@@ -506,12 +588,12 @@ class ApiDocumentation
     }
 
     #[OA\Delete(
-        path: '/api/compras/{compra}',
+        path: '/compras/{compra}',
         tags: ['Compras'],
         summary: 'Eliminar compra',
         security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: 'compra', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'compra', in: 'path', required: true, schema: new OA\Schema(type: 'integer', example: 1)),
         ],
         responses: [
             new OA\Response(response: 204, description: 'Compra eliminada'),

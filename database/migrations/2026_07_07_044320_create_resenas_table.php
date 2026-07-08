@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('resenas', function (Blueprint $table) {
             $table->id();
+            $table->string('titulo', 255);
+            $table->text('contenido')->nullable();
+            $table->integer('puntuacion')->default(0);
             $table->timestamps();
         });
     }
