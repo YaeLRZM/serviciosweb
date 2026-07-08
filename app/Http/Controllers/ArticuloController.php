@@ -10,32 +10,43 @@ class ArticuloController extends Controller
 {
     public function index()
     {
-        // $this->authorize('verArticulos');
-        return Articulo::all();
+        $usuarioActivo = auth()->user();
+        if ($usuarioActivo && $usuarioActivo->can('verArticulos')) {
+            return Articulo::all();
+        }
+        return response()->json(['message' => 'No tienes permiso para ver los artículos.'], 403);
     }
 
     public function store(Request $request)
     {
-        // $this->authorize('crearArticulos');
+        if (!auth()->user()->can('crearArticulos')) {
+            return response()->json(['message' => 'No tienes permiso para crear artículos.'], 403);
+        }
         return Articulo::create($request->validated());
     }
 
     public function show(Articulo $articulo)
     {
-        // $this->authorize('verArticulos');
+        if (!auth()->user()->can('verArticulos')) {
+            return response()->json(['message' => 'No tienes permiso para ver los artículos.'], 403);
+        }
         return $articulo;
     }
 
     public function update(Request $request, Articulo $articulo)
     {
-        // $this->authorize('editarArticulos');
+        if (!auth()->user()->can('editarArticulos')) {
+            return response()->json(['message' => 'No tienes permiso para editar artículos.'], 403);
+        }
         $articulo->update($request->validated());
         return $articulo;
     }
 
     public function destroy(Articulo $articulo)
     {
-        // $this->authorize('eliminarArticulos');
+        if (!auth()->user()->can('eliminarArticulos')) {
+            return response()->json(['message' => 'No tienes permiso para eliminar artículos.'], 403);
+        }
         $articulo->delete();
         return response()->noContent();
     }

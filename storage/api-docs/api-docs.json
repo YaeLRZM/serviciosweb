@@ -12,13 +12,13 @@
         }
     ],
     "paths": {
-        "/api/login": {
+        "/login": {
             "post": {
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Iniciar sesión y obtener JWT",
-                "operationId": "0c7b81e42ce22c8e2c23dd70dd0819f0",
+                "operationId": "de649bd0fad158b7039c79dce50fccba",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -46,13 +46,13 @@
                 }
             }
         },
-        "/api/me": {
+        "/me": {
             "get": {
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Obtener el usuario autenticado",
-                "operationId": "708ce6825bbf01d49c8b20e94a94f3aa",
+                "operationId": "5ed6771197df80788524722b6b6e6229",
                 "responses": {
                     "200": {
                         "description": "Usuario autenticado",
@@ -75,13 +75,13 @@
                 ]
             }
         },
-        "/api/logout": {
+        "/logout": {
             "post": {
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Cerrar sesión y revocar el token",
-                "operationId": "7b8022dfc08ba491a41e70720578406f",
+                "operationId": "6f7cead1c71656f63e6a8e2ba26f0cb2",
                 "responses": {
                     "200": {
                         "description": "Sesión cerrada"
@@ -97,13 +97,13 @@
                 ]
             }
         },
-        "/api/refresh": {
+        "/refresh": {
             "post": {
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Renovar el JWT",
-                "operationId": "9700bf925e2283b3c64fc2f5f8bba760",
+                "operationId": "fad3e1e01617aa60e44b435ad1ddcb57",
                 "responses": {
                     "200": {
                         "description": "Token renovado",
@@ -140,13 +140,13 @@
                 ]
             }
         },
-        "/api/articulos": {
+        "/articulos": {
             "get": {
                 "tags": [
                     "Articulos"
                 ],
                 "summary": "Listar artículos",
-                "operationId": "279c6af49b6872381a2f09885cde7610",
+                "operationId": "a175e3c8ae37bb3c66556544a3bd8e86",
                 "responses": {
                     "200": {
                         "description": "Listado de artículos",
@@ -173,7 +173,17 @@
                     "Articulos"
                 ],
                 "summary": "Crear artículo",
-                "operationId": "dd73eeadcdc657f65f0e581fc528408a",
+                "operationId": "bad3ad8f476c515a81315ae6bd107bd2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ArticuloUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Artículo creado",
@@ -193,20 +203,21 @@
                 ]
             }
         },
-        "/api/articulos/{articulo}": {
+        "/articulos/{articulo}": {
             "get": {
                 "tags": [
                     "Articulos"
                 ],
                 "summary": "Obtener un artículo",
-                "operationId": "e42841dd5464fe4c138684fe773027bb",
+                "operationId": "5354cea49f5f635016bd3290ffa06c04",
                 "parameters": [
                     {
                         "name": "articulo",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -233,17 +244,28 @@
                     "Articulos"
                 ],
                 "summary": "Actualizar artículo",
-                "operationId": "b75f31bc819c3e1207672c7e74a96a18",
+                "operationId": "2284fe5c79186c23dd58fd1c038a8e95",
                 "parameters": [
                     {
                         "name": "articulo",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ArticuloUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Artículo actualizado",
@@ -267,14 +289,15 @@
                     "Articulos"
                 ],
                 "summary": "Eliminar artículo",
-                "operationId": "ad63e723cc5af414dac7c4f020074191",
+                "operationId": "18d4a1c7f738b0ffd436c48ff24abbf6",
                 "parameters": [
                     {
                         "name": "articulo",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -290,13 +313,13 @@
                 ]
             }
         },
-        "/api/resenas": {
+        "/resenas": {
             "get": {
                 "tags": [
                     "Resenas"
                 ],
                 "summary": "Listar reseñas",
-                "operationId": "faea8f7e49d7977c8441191f3f0452fe",
+                "operationId": "aea77e0b364e07f85180aa1faae91227",
                 "responses": {
                     "200": {
                         "description": "Listado de reseñas",
@@ -323,7 +346,17 @@
                     "Resenas"
                 ],
                 "summary": "Crear reseña",
-                "operationId": "486e5ac8713f28fecb55f8fb09d10f0b",
+                "operationId": "5ee7340527e54faf29f12b1d1d61cef8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResenaUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Reseña creada",
@@ -343,20 +376,21 @@
                 ]
             }
         },
-        "/api/resenas/{resena}": {
+        "/resenas/{resena}": {
             "get": {
                 "tags": [
                     "Resenas"
                 ],
                 "summary": "Obtener una reseña",
-                "operationId": "2be11e1b6e9e58d323d28c6d56030e87",
+                "operationId": "8a50f039fd9489ddf04dfb6bf214f43b",
                 "parameters": [
                     {
                         "name": "resena",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -383,17 +417,28 @@
                     "Resenas"
                 ],
                 "summary": "Actualizar reseña",
-                "operationId": "e4b531fe7d56d28a7119c50f5e158aef",
+                "operationId": "1bbe85a3f28f75dc92585eaa02b82f1e",
                 "parameters": [
                     {
                         "name": "resena",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResenaUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Reseña actualizada",
@@ -417,14 +462,15 @@
                     "Resenas"
                 ],
                 "summary": "Eliminar reseña",
-                "operationId": "b845ee3ab91c24734a9dbb0e35013cfd",
+                "operationId": "7594d0fdb743b6d2b4de8f37988ff13a",
                 "parameters": [
                     {
                         "name": "resena",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -440,13 +486,13 @@
                 ]
             }
         },
-        "/api/usuarios": {
+        "/usuarios": {
             "get": {
                 "tags": [
                     "Usuarios"
                 ],
                 "summary": "Listar usuarios",
-                "operationId": "5441e1e0f2c3742dfbee23db70a5b7d8",
+                "operationId": "e390e2480228a1f2fe02c2d6329b99e8",
                 "responses": {
                     "200": {
                         "description": "Listado de usuarios",
@@ -473,7 +519,17 @@
                     "Usuarios"
                 ],
                 "summary": "Crear usuario",
-                "operationId": "80e1acb1143bf7063a1f820289487ea4",
+                "operationId": "4a67cbb05853d1f24cd029e73d8e7953",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Usuario creado",
@@ -493,20 +549,21 @@
                 ]
             }
         },
-        "/api/usuarios/{usuario}": {
+        "/usuarios/{usuario}": {
             "get": {
                 "tags": [
                     "Usuarios"
                 ],
                 "summary": "Obtener un usuario",
-                "operationId": "5f5f8c83789fd9f428d7325c1eb6c156",
+                "operationId": "4a3ec3c84de8d12dac5eb446beece818",
                 "parameters": [
                     {
                         "name": "usuario",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -533,17 +590,28 @@
                     "Usuarios"
                 ],
                 "summary": "Actualizar usuario",
-                "operationId": "31e56bd85142f40d1926b23a87148694",
+                "operationId": "503cb75e8a990ec4b347afb2dcb2be48",
                 "parameters": [
                     {
                         "name": "usuario",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Usuario actualizado",
@@ -567,14 +635,15 @@
                     "Usuarios"
                 ],
                 "summary": "Eliminar usuario",
-                "operationId": "d0b27a508f3694c1247fc75be89f0892",
+                "operationId": "0f1a7d1acf3a88afe7ee8da570862962",
                 "parameters": [
                     {
                         "name": "usuario",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -590,13 +659,13 @@
                 ]
             }
         },
-        "/api/compras": {
+        "/compras": {
             "get": {
                 "tags": [
                     "Compras"
                 ],
                 "summary": "Listar compras",
-                "operationId": "1fab5c16643f571de914feac01e6567b",
+                "operationId": "275c9aa0d605cafe595ef4af9ede702d",
                 "responses": {
                     "200": {
                         "description": "Listado de compras",
@@ -623,7 +692,17 @@
                     "Compras"
                 ],
                 "summary": "Crear compra",
-                "operationId": "0d275390f0c76df48af445a2d3874512",
+                "operationId": "1bc3f304f51805df92f7451414abf54c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompraUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Compra creada",
@@ -643,20 +722,21 @@
                 ]
             }
         },
-        "/api/compras/{compra}": {
+        "/compras/{compra}": {
             "get": {
                 "tags": [
                     "Compras"
                 ],
                 "summary": "Obtener una compra",
-                "operationId": "47be6dc552baeb78020502f3781ddbcd",
+                "operationId": "74e6d4f1b908f55c3bf4803b36dd6f34",
                 "parameters": [
                     {
                         "name": "compra",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -683,17 +763,28 @@
                     "Compras"
                 ],
                 "summary": "Actualizar compra",
-                "operationId": "ebe688d09606ab4b22fc59ff4547098f",
+                "operationId": "56b72c9807b54866cc104ac7601e98c3",
                 "parameters": [
                     {
                         "name": "compra",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CompraUpsertRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Compra actualizada",
@@ -717,14 +808,15 @@
                     "Compras"
                 ],
                 "summary": "Eliminar compra",
-                "operationId": "99cf956680abbdc1a1bcb7f6f2cad7a8",
+                "operationId": "ef69e5f5e49494c69c70e1b4933eae31",
                 "parameters": [
                     {
                         "name": "compra",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -758,6 +850,108 @@
                         "type": "string",
                         "format": "password",
                         "example": "secret123"
+                    }
+                },
+                "type": "object"
+            },
+            "UserUpsertRequest": {
+                "required": [
+                    "name",
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Admin"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "admin@correo.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "format": "password",
+                        "example": "secret123"
+                    }
+                },
+                "type": "object"
+            },
+            "ArticuloUpsertRequest": {
+                "required": [
+                    "nombre",
+                    "precio",
+                    "stock"
+                ],
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "example": "Laptop"
+                    },
+                    "descripcion": {
+                        "type": "string",
+                        "example": "Equipo portátil de alto rendimiento",
+                        "nullable": true
+                    },
+                    "precio": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "stock": {
+                        "type": "integer",
+                        "example": 10
+                    }
+                },
+                "type": "object"
+            },
+            "ResenaUpsertRequest": {
+                "required": [
+                    "titulo",
+                    "puntuacion"
+                ],
+                "properties": {
+                    "titulo": {
+                        "type": "string",
+                        "example": "Excelente compra"
+                    },
+                    "contenido": {
+                        "type": "string",
+                        "example": "El producto llegó en perfectas condiciones.",
+                        "nullable": true
+                    },
+                    "puntuacion": {
+                        "type": "integer",
+                        "example": 5
+                    }
+                },
+                "type": "object"
+            },
+            "CompraUpsertRequest": {
+                "required": [
+                    "user_id",
+                    "articulo_id",
+                    "cantidad",
+                    "precio_unitario"
+                ],
+                "properties": {
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "articulo_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "cantidad": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "precio_unitario": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 499.99
                     }
                 },
                 "type": "object"
@@ -814,6 +1008,10 @@
                 "type": "object"
             },
             "User": {
+                "required": [
+                    "name",
+                    "email"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -831,6 +1029,7 @@
                     "email_verified_at": {
                         "type": "string",
                         "format": "date-time",
+                        "example": "2026-07-06T12:00:00Z",
                         "nullable": true
                     },
                     "created_at": {
@@ -847,10 +1046,33 @@
                 "type": "object"
             },
             "Articulo": {
+                "required": [
+                    "nombre",
+                    "precio",
+                    "stock"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer",
                         "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Laptop"
+                    },
+                    "descripcion": {
+                        "type": "string",
+                        "example": "Equipo portátil de alto rendimiento",
+                        "nullable": true
+                    },
+                    "precio": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "stock": {
+                        "type": "integer",
+                        "example": 10
                     },
                     "created_at": {
                         "type": "string",
@@ -866,10 +1088,27 @@
                 "type": "object"
             },
             "Resena": {
+                "required": [
+                    "titulo",
+                    "puntuacion"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer",
                         "example": 1
+                    },
+                    "titulo": {
+                        "type": "string",
+                        "example": "Excelente compra"
+                    },
+                    "contenido": {
+                        "type": "string",
+                        "example": "El producto llegó en perfectas condiciones.",
+                        "nullable": true
+                    },
+                    "puntuacion": {
+                        "type": "integer",
+                        "example": 5
                     },
                     "created_at": {
                         "type": "string",
@@ -885,10 +1124,33 @@
                 "type": "object"
             },
             "Compra": {
+                "required": [
+                    "user_id",
+                    "articulo_id",
+                    "cantidad",
+                    "precio_unitario"
+                ],
                 "properties": {
                     "id": {
                         "type": "integer",
                         "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "articulo_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "cantidad": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "precio_unitario": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 499.99
                     },
                     "created_at": {
                         "type": "string",
