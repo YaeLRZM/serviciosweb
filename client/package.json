@@ -1,0 +1,12 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "Frontend mínimo para probar CORS contra la API de Laravel",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}
