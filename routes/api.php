@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticuloController;
+use App\Http\Controllers\CompraController;
 use App\Http\Controllers\ResenaController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\CompraController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/login', function (Request $request) {
     $credentials = $request->validate([
@@ -27,6 +27,22 @@ Route::post('/login', function (Request $request) {
     ]);
 });
 
+/*
+|--------------------------------------------------------------------------
+| Lectura pública (sin auth)
+|--------------------------------------------------------------------------
+*/
+Route::get('/articulos', [ArticuloController::class, 'index'])->name('articulos.index');
+Route::get('/articulos/{articulo}', [ArticuloController::class, 'show'])->name('articulos.show');
+Route::get('/resenas', [ResenaController::class, 'index'])->name('resenas.index');
+Route::get('/resenas/{resena}', [ResenaController::class, 'show'])->name('resenas.show');
+
+/*
+|--------------------------------------------------------------------------
+| Rutas protegidas con JWT (auth:api)
+| Incluye TODOS los destroy: DELETE /api/{recurso}/{id}
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:api')->group(function () {
     Route::get('/me', function () {
         return auth('api')->user();
@@ -48,15 +64,19 @@ Route::middleware('auth:api')->group(function () {
         ]);
     });
 
-    // Artículos
-    Route::apiResource('articulos', ArticuloController::class);
-    
-    // Reseñas
-    Route::apiResource('resenas', ResenaController::class);
-    
-    // Usuarios
+    // Artículos: solo escritura (index/show son públicos arriba)
+    // only() registra store + update + destroy (DELETE /articulos/{articulo})
+    Route::apiResource('articulos', ArticuloController::class)
+        ->only(['store', 'update', 'destroy']);
+
+    // Reseñas: solo escritura (index/show son públicos arriba)
+    // only() registra store + update + destroy (DELETE /resenas/{resena})
+    Route::apiResource('resenas', ResenaController::class)
+        ->only(['store', 'update', 'destroy']);
+
+    // Usuarios: CRUD completo, incluido destroy (DELETE /usuarios/{usuario})
     Route::apiResource('usuarios', UserController::class);
-    
-    // Compras
+
+    // Compras: CRUD completo, incluido destroy (DELETE /compras/{compra})
     Route::apiResource('compras', CompraController::class);
 });

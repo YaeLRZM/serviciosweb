@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Articulo;
-use App\Models\Resena;
 use App\Models\Compra;
+use App\Models\Resena;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -18,18 +18,33 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory(10)->create();
+        $this->call([
+            RolesSeeder::class,
+        ]);
 
         $admin = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
             'password' => bcrypt('password'),
         ]);
-        
-        $this->call([
-            RolesSeeder::class
-        ]);
         $admin->assignRole('admin');
+
+        $user = User::factory()->create([
+            'name' => 'Regular User',
+            'email' => 'user@example.com',
+            'password' => bcrypt('password'),
+        ]);
+        $user->assignRole('user');
+
+        $guest = User::factory()->create([
+            'name' => 'Guest User',
+            'email' => 'guest@example.com',
+            'password' => bcrypt('password'),
+        ]);
+        $guest->assignRole('guest');
+
+        // Extra users without roles — useful to verify that JWT alone is not enough.
+        User::factory(5)->create();
 
         Articulo::factory(20)->create();
         Resena::factory(30)->create();

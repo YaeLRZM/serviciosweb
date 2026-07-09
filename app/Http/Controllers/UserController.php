@@ -2,68 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Http\Requests\DestroyUserRequest;
+use App\Http\Requests\IndexUserRequest;
+use App\Http\Requests\ShowUserRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(IndexUserRequest $request)
     {
         return User::all();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return User::create($request->validated());
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreUserRequest $request)
     {
         return User::create($request->validated());
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(User $user)
+    public function show(ShowUserRequest $request, User $usuario)
     {
-        return $user;
+        return $usuario;
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(User $user)
+    public function update(UpdateUserRequest $request, User $usuario)
     {
-        
+        $usuario->update($request->validated());
+
+        return $usuario;
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateUserRequest $request, User $user)
+    public function destroy(DestroyUserRequest $request, User $usuario)
     {
-        $user->update($request->validated());
-        return $user;
-    }
+        $usuario->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(User $user)
-    {
-        $user->delete();
         return response()->noContent();
     }
 }

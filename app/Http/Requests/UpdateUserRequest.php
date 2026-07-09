@@ -2,30 +2,36 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\AuthorizesApiPermission;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use AuthorizesApiPermission;
+
     public function authorize(): bool
     {
-        return true;
+        return $this->allowIfCan('editarUsuarios');
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        $usuario = $this->route('usuario');
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('user'))],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($usuario),
+            ],
             'password' => ['required', 'string', 'min:8'],
         ];
     }

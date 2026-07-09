@@ -16,6 +16,14 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable, HasRoles;
 
     /**
+     * Guard de Spatie para este modelo.
+     *
+     * Los roles/permisos en BD usan guard_name=web, mientras la API autentica
+     * con JWT (auth:api). Fijar web evita que can() busque permisos en guard api.
+     */
+    protected string $guard_name = 'web';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

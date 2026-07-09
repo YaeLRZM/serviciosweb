@@ -2,22 +2,20 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\AuthorizesApiPermission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreResenaRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use AuthorizesApiPermission;
+
     public function authorize(): bool
     {
-        return true;
+        return $this->allowIfCan('crearResenas');
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array

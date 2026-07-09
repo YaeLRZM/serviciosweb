@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesSeeder extends Seeder
 {
@@ -14,48 +14,40 @@ class RolesSeeder extends Seeder
      */
     public function run(): void
     {
-        // ARTICULOS
-        Permission::firstOrCreate(['name' => 'verArticulos']);
-        Permission::firstOrCreate(['name' => 'crearArticulos']);
-        Permission::firstOrCreate(['name' => 'editarArticulos']);
-        Permission::firstOrCreate(['name' => 'eliminarArticulos']);
-        // RESEÑAS
-        Permission::firstOrCreate(['name' => 'verResenas']);
-        Permission::firstOrCreate(['name' => 'crearResenas']);
-        Permission::firstOrCreate(['name' => 'editarResenas']);
-        Permission::firstOrCreate(['name' => 'eliminarResenas']);
-        // USUARIOS
-        Permission::firstOrCreate(['name' => 'verUsuarios']);
-        Permission::firstOrCreate(['name' => 'crearUsuarios']);
-        Permission::firstOrCreate(['name' => 'editarUsuarios']);
-        Permission::firstOrCreate(['name' => 'eliminarUsuarios']);
-        // COMPRAS
-        Permission::firstOrCreate(['name' => 'verCompras']);
-        Permission::firstOrCreate(['name' => 'crearCompras']);
-        Permission::firstOrCreate(['name' => 'editarCompras']);
-        Permission::firstOrCreate(['name' => 'eliminarCompras']);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // ADMIN
-        Role::create(['name' => 'admin'])->givePermissionTo([
+        $permissions = [
+            // ARTICULOS
             'verArticulos',
             'crearArticulos',
             'editarArticulos',
             'eliminarArticulos',
+            // RESEÑAS
             'verResenas',
             'crearResenas',
             'editarResenas',
             'eliminarResenas',
+            // USUARIOS
             'verUsuarios',
             'crearUsuarios',
             'editarUsuarios',
             'eliminarUsuarios',
+            // COMPRAS
             'verCompras',
             'crearCompras',
             'editarCompras',
-            'eliminarCompras'
-        ]);
-        // USER
-        Role::create(['name' => 'user'])->givePermissionTo([
+            'eliminarCompras',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        $admin = Role::firstOrCreate(['name' => 'admin']);
+        $admin->syncPermissions($permissions);
+
+        $user = Role::firstOrCreate(['name' => 'user']);
+        $user->syncPermissions([
             'verArticulos',
             'verResenas',
             'crearResenas',
@@ -64,12 +56,13 @@ class RolesSeeder extends Seeder
             'verCompras',
             'crearCompras',
             'editarCompras',
-            'eliminarCompras'
+            'eliminarCompras',
         ]);
-        // GUEST
-        Role::create(['name' => 'guest'])->givePermissionTo([
-            'verArticulos'
+
+        $guest = Role::firstOrCreate(['name' => 'guest']);
+        $guest->syncPermissions([
+            'verArticulos',
+            'verResenas',
         ]);
     }
 }
-// 
