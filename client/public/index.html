@@ -58,9 +58,22 @@
     <pre id="outLogin">—</pre>
   </fieldset>
 
+  <fieldset>
+    <legend>3. DELETE autenticado · <code>/api/articulos/{articulo}</code></legend>
+    <p><small>Usa el Bearer token del login (en memoria). No verifica roles.</small></p>
+    <label for="articleId">ID del artículo</label>
+    <input id="articleId" type="number" min="1" step="1" placeholder="1" />
+    <br /><br />
+    <button id="btnDeleteArticulo" type="button">Eliminar artículo</button>
+    <p id="statusDeleteArticulo"></p>
+    <pre id="outDeleteArticulo">—</pre>
+  </fieldset>
+
   <script>
     // Cambia el puerto si tu Laravel corre en otro (php artisan serve usa 8000).
     const API_BASE = 'http://localhost:8000';
+
+    let authToken = null;
 
     document.getElementById('origin').textContent = window.location.origin;
     document.getElementById('apiBase').textContent = API_BASE;
@@ -71,6 +84,19 @@
       status.className = ok ? 'ok' : 'err';
       document.getElementById(elId).textContent =
         typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    async function parseResponse(res) {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          return await res.json();
+        } catch {
+          return null;
+        }
+      }
+      const text = await res.text();
+      return text || null;
     }
 
     document.getElementById('btnArticulos').addEventListener('click', async () => {
@@ -99,9 +125,82 @@
           }),
         });
         const data = await res.json();
-        show('outLogin', 'statusLogin', res.ok, data);
+        if (res.ok) {
+          authToken = data.access_token || data.token || null;
+          if (authToken) {
+            document.getElementById('statusLogin').textContent =
+              'CORS OK — token guardado en memoria';
+            document.getElementById('statusLogin').className = 'ok';
+          } else {
+            authToken = null;
+            document.getElementById('statusLogin').textContent =
+              'Login OK pero no se encontró access_token/token';
+            document.getElementById('statusLogin').className = 'err';
+          }
+        } else {
+          authToken = null;
+          document.getElementById('statusLogin').textContent = 'Error (revisa consola)';
+          document.getElementById('statusLogin').className = 'err';
+        }
+        document.getElementById('outLogin').textContent = JSON.stringify(data, null, 2);
       } catch (err) {
+        authToken = null;
         show('outLogin', 'statusLogin', false, String(err));
+      }
+    });
+
+    document.getElementById('btnDeleteArticulo').addEventListener('click', async () => {
+      const statusEl = document.getElementById('statusDeleteArticulo');
+      const outEl = document.getElementById('outDeleteArticulo');
+      const articleId = document.getElementById('articleId').value.trim();
+
+      if (!authToken) {
+        statusEl.textContent = 'Primero inicia sesión';
+        statusEl.className = 'err';
+        outEl.textContent = JSON.stringify({ error: 'Primero inicia sesión' }, null, 2);
+        return;
+      }
+
+      if (!articleId) {
+        statusEl.textContent = 'Indica un ID de artículo';
+        statusEl.className = 'err';
+        outEl.textContent = JSON.stringify({ error: 'Indica un ID de artículo' }, null, 2);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/articulos/${articleId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Accept': 'application/json',
+          },
+        });
+
+        const body = await parseResponse(res);
+        const ok = res.ok;
+
+        statusEl.textContent = ok
+          ? `HTTP ${res.status} — eliminado`
+          : `HTTP ${res.status} — error`;
+        statusEl.className = ok ? 'ok' : 'err';
+
+        if (body !== null && body !== '') {
+          outEl.textContent = typeof body === 'string'
+            ? body
+            : JSON.stringify({ status: res.status, body }, null, 2);
+        } else {
+          outEl.textContent = JSON.stringify({
+            status: res.status,
+            message: ok
+              ? 'Artículo eliminado correctamente'
+              : 'Respuesta sin cuerpo',
+          }, null, 2);
+        }
+      } catch (err) {
+        statusEl.textContent = 'Error de red / fetch';
+        statusEl.className = 'err';
+        outEl.textContent = String(err);
       }
     });
   </script>
