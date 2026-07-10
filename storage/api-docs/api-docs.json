@@ -659,6 +659,69 @@
                 ]
             }
         },
+        "/api/usuarios/{usuario}/roles": {
+            "put": {
+                "tags": [
+                    "Usuarios"
+                ],
+                "summary": "Asignar o reemplazar roles de un usuario",
+                "description": "Reemplaza los roles actuales del usuario por los enviados. Solo un admin autenticado puede realizar esta acción.",
+                "operationId": "a00849a82b866e1227d05f3d3f0684cf",
+                "parameters": [
+                    {
+                        "name": "usuario",
+                        "in": "path",
+                        "description": "ID del usuario",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "roles"
+                                ],
+                                "properties": {
+                                    "roles": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "user"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Roles actualizados correctamente"
+                    },
+                    "401": {
+                        "description": "No autenticado"
+                    },
+                    "403": {
+                        "description": "No autorizado. Solo admins."
+                    },
+                    "422": {
+                        "description": "Error de validación"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/compras": {
             "get": {
                 "tags": [

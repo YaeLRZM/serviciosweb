@@ -506,6 +506,45 @@ class ApiDocumentation
     {
     }
 
+    #[OA\Put(
+        path: '/api/usuarios/{usuario}/roles',
+        tags: ['Usuarios'],
+        summary: 'Asignar o reemplazar roles de un usuario',
+        description: 'Reemplaza los roles actuales del usuario por los enviados. Solo un admin autenticado puede realizar esta acción.',
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'usuario',
+                in: 'path',
+                required: true,
+                description: 'ID del usuario',
+                schema: new OA\Schema(type: 'integer', example: 2)
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['roles'],
+                properties: [
+                    new OA\Property(
+                        property: 'roles',
+                        type: 'array',
+                        items: new OA\Items(type: 'string', example: 'user')
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Roles actualizados correctamente'),
+            new OA\Response(response: 401, description: 'No autenticado'),
+            new OA\Response(response: 403, description: 'No autorizado. Solo admins.'),
+            new OA\Response(response: 422, description: 'Error de validación'),
+        ]
+    )]
+    public function usuariosAssignRoles(): void
+    {
+    }
+
     #[OA\Get(
         path: '/api/compras',
         tags: ['Compras'],

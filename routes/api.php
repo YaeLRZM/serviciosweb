@@ -77,6 +77,9 @@ Route::middleware('auth:api')->group(function () {
     // Usuarios: CRUD completo, incluido destroy (DELETE /usuarios/{usuario})
     Route::apiResource('usuarios', UserController::class);
 
+    // Asignación de roles a usuarios (solo admin)
+    Route::put('/usuarios/{usuario}/roles', [UserController::class, 'assignRoles']);
+
     // Compras: CRUD completo, incluido destroy (DELETE /compras/{compra})
     Route::apiResource('compras', CompraController::class);
 });

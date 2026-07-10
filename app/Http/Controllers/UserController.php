@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AssignUserRolesRequest;
 use App\Http\Requests\DestroyUserRequest;
 use App\Http\Requests\IndexUserRequest;
 use App\Http\Requests\ShowUserRequest;
@@ -38,5 +39,16 @@ class UserController extends Controller
         $usuario->delete();
 
         return response()->noContent();
+    }
+
+    public function assignRoles(AssignUserRolesRequest $request, User $usuario)
+    {
+        $roles = $request->validated()['roles'];
+        $usuario->syncRoles($roles);
+
+        return response()->json([
+            'message' => 'Roles actualizados correctamente',
+            'data' => $usuario->load('roles'),
+        ]);
     }
 }
