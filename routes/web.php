@@ -8,6 +8,10 @@ Route::view('admin/dashboard', 'admin.dashboard')
     ->middleware(['auth', 'verified'])
     ->name('admin.dashboard');
 
+Route::view('admin/publicaciones', 'admin.publicacion.index')
+    ->middleware(['auth', 'verified'])
+    ->name('admin.publicacion.index');
+
 Route::view('user/dashboard', 'user.dashboard')
     ->middleware(['auth', 'verified'])
     ->name('user.dashboard');

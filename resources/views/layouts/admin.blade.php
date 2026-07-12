@@ -33,39 +33,37 @@
                     </div>
 
                     <!-- LADO DERECHO: Buscador, Notificaciones y Perfil -->
-                    <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-4 md:gap-8">
 
-                        <!-- 1. Buscador Estilizado (Similar a la imagen) -->
-                        <div class="relative w-64 md:w-80">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </span>
+                        <!-- 1. Buscador Estilizado (Estilo Píldora como en la imagen) -->
+                        <div class="relative hidden sm:block w-72 md:w-96">
                             <input type="text"
-                                placeholder="Buscar o escribir un comando..."
-                                class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] transition-colors">
+                                placeholder="Buscar productos, artesanos o ventas..."
+                                class="w-full px-6 py-2.5 bg-white border border-pink-100/80 rounded-full text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] transition-colors shadow-sm">
                         </div>
 
                         <!-- 2. Campanita de Notificaciones -->
-                        <button class="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition">
+                        <button class="relative p-2 text-gray-600 hover:text-[#D81B60] transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
-                            <!-- Indicador de notificación activa (Buzón de moderación, por ejemplo) -->
-                            <span class="absolute top-1.5 right-1.5 flex h-2 w-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                            <!-- Punto estático rosa (como en la imagen) -->
+                            <span class="absolute top-2 right-2 flex h-2 w-2">
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#D81B60] border border-white"></span>
                             </span>
                         </button>
 
-                        <!-- División Visual Sutil -->
-                        <div class="h-6 w-px bg-gray-200"></div>
+                        <!-- 3. Información del Usuario y Foto de Perfil -->
+                        <div class="flex items-center gap-3 pl-2">
+                            <!-- Textos del perfil -->
+                            <div class="hidden md:flex flex-col text-right">
+                                <span class="text-sm font-bold text-[#2B2B2B] leading-none mb-1">Admin Oaxaca</span>
+                                <span class="text-[11px] font-medium text-gray-500 leading-none">Super Admin</span>
+                            </div>
 
-                        <!-- 3. Foto de Perfil del Administrador -->
-                        <div class="flex items-center gap-3">
-                            <button class="flex text-sm bg-gray-800 rounded-full focus:ring-2 focus:ring-[#D81B60] transition flex-shrink-0">
-                                <img class="h-9 w-9 rounded-full object-cover border border-gray-100"
+                            <!-- Avatar con borde sutil -->
+                            <button class="flex text-sm bg-white rounded-full focus:ring-2 focus:ring-[#D81B60] transition flex-shrink-0 p-0.5 border-2 border-pink-100/60">
+                                <img class="h-10 w-10 rounded-full object-cover"
                                     src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
                                     alt="Avatar del Administrador">
                             </button>

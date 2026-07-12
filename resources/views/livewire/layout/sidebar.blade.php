@@ -24,7 +24,7 @@ $logout = function (Logout $logout) {
         <flux:sidebar.nav>
             <flux:sidebar.group heading="Menú" class="grid gap-2 text-[#F8F5F2]">
                 <x-item-sidebar icon="home" ruta="admin.dashboard" texto="Página principal" />
-                <x-item-sidebar icon="user-round" ruta="admin.profile" texto="Mi Perfil" />
+                <x-item-sidebar icon="publications" ruta="admin.publicacion.index" texto="Publicaciones" />
             </flux:sidebar.group>
         </flux:sidebar.nav>
 

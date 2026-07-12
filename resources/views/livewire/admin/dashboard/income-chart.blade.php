@@ -32,20 +32,22 @@ with(fn() => [
 
 ?>
 
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-center mb-6">
+<!-- Cambiamos rounded-2xl a rounded-[2rem] y unificamos el color de borde -->
+<div class="bg-white rounded-[2rem] shadow-sm border border-gray-50 p-6">
+    <div class="flex justify-between items-start mb-6">
         <div>
-            <h3 class="text-xl font-bold text-[#2B2B2B]">Ventas por Región (Oaxaca)</h3>
-            <p class="text-sm text-gray-500">Regiones con mayor impacto cultural y comercial</p>
+            <!-- Cambiamos el color del encabezado a Rosa Bugambilia (#D81B60) -->
+            <h3 class="text-xl font-bold text-[#D81B60]">Ventas por Región (Oaxaca)</h3>
+            <p class="text-sm text-gray-500 mt-1">Regiones con mayor impacto cultural y comercial</p>
         </div>
-        <select wire:model.live="categoria_filtro" class="bg-gray-50 border-none text-sm text-gray-600 rounded-lg focus:ring-[#D81B60]">
+        <select wire:model.live="categoria_filtro" class="bg-gray-50 border-none text-sm font-medium text-gray-600 rounded-lg focus:ring-[#D81B60] py-2 pl-4 pr-8 cursor-pointer">
             <option value="Textiles">Solo Textiles</option>
             <option value="Todos">Todo el Catálogo</option>
         </select>
     </div>
 
     <!-- Contenedor de la Gráfica - Incrementado a h-72 para mayor longitud -->
-    <div class="h-72 flex items-end gap-3 pt-4 border-b border-l border-gray-200 px-4">
+    <div class="h-72 flex items-end gap-3 pt-4 border-b border-l border-gray-100 px-4">
         @foreach($ventas_por_region as $index => $ventas)
         @php
         $region_nombre = $regiones[$index];
@@ -62,8 +64,9 @@ with(fn() => [
             </div>
 
             <!-- Barra de Color Dinámico e Interacción -->
+            <!-- Se hizo ligeramente más redondeada arriba con rounded-t-lg -->
             <div style="height: {{ $altura_porcentaje }}%; background-color: {{ $color_barra }};"
-                class="w-full opacity-90 group-hover:opacity-100 group-hover:scale-x-105 rounded-t-md transition-all duration-300">
+                class="w-full opacity-90 group-hover:opacity-100 group-hover:scale-x-105 rounded-t-lg transition-all duration-300 cursor-pointer">
             </div>
         </div>
         @endforeach
@@ -72,7 +75,7 @@ with(fn() => [
     <!-- Eje X -->
     <div class="flex gap-3 mt-3 px-4">
         @foreach($regiones as $reg)
-        <div class="flex-1 text-center text-[11px] font-bold text-gray-500 truncate" title="{{ $reg }}">
+        <div class="flex-1 text-center text-[11px] font-bold text-gray-400 truncate" title="{{ $reg }}">
             {{ $reg }}
         </div>
         @endforeach

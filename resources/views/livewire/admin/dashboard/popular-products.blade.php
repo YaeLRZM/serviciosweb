@@ -26,33 +26,33 @@ with(fn() => [
 ]);
 ?>
 
-<!-- Ajustado a px-8 para ensanchar un poco la tarjeta en armonía con las alertas -->
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 py-6 px-8">
-    <h3 class="text-xl font-bold text-[#2B2B2B] mb-6">Prendas Populares</h3>
+<!-- Altura fija para alinearse con la tarjeta de arriba -->
+<div class="bg-white rounded-[2rem] shadow-sm border border-gray-50 p-6 flex flex-col h-[430px]">
+    <h3 class="text-lg font-bold text-[#D81B60] mb-4 flex-shrink-0">Prendas Populares</h3>
 
-    <div class="flex justify-between text-sm text-gray-500 mb-4 px-2">
-        <span>Producto</span>
-        <span>Total de ventas</span>
-    </div>
-
-    <div class="space-y-4 mb-6">
+    <!-- Contenedor con scroll (overflow-y-auto) -->
+    <div class="space-y-2 flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
         @foreach($productos as $producto)
-        <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition">
+        <div class="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-[#F8F5F2] rounded-md flex items-center justify-center text-[#D81B60] font-bold">
+                <div class="w-10 h-10 bg-[#F2F7F9] rounded-xl overflow-hidden flex items-center justify-center text-[#D81B60] font-bold">
                     {{ $producto['inicial'] }}
                 </div>
                 <div>
                     <p class="text-sm font-bold text-gray-800">{{ $producto['nombre'] }}</p>
-                    <p class="text-xs text-gray-500">{{ $producto['descripcion'] }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Región: {{ explode(' ', $producto['descripcion'])[0] ?? 'Oaxaca' }}</p>
                 </div>
             </div>
-            <span class="font-bold text-gray-800 text-sm">{{ $producto['ventas'] }}</span>
+            <div class="text-right">
+                <p class="font-bold text-gray-800 text-sm">{{ (int) filter_var($producto['ventas'], FILTER_SANITIZE_NUMBER_INT) }}</p>
+                <p class="text-[10px] font-bold text-emerald-500">+12%</p>
+            </div>
         </div>
         @endforeach
     </div>
 
-    <button class="w-full py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-        Ver catálogo completo
+    <!-- Botón fijado al fondo -->
+    <button class="w-full py-2.5 text-sm font-bold text-[#D81B60] bg-white border border-[#D81B60]/30 rounded-full hover:bg-pink-50 transition mt-4 flex-shrink-0">
+        Exportar Reporte
     </button>
 </div>
