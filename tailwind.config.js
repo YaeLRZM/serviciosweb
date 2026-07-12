@@ -13,6 +13,12 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                cinzel: ['Cinzel', ...defaultTheme.fontFamily.sans],
+                'cinzel-decorative': ['Cinzel Decorative', ...defaultTheme.fontFamily.sans],
+                'cormorant-garamond': ['Cormorant Garamond', ...defaultTheme.fontFamily.sans],
+                poppins: ['Poppins', ...defaultTheme.fontFamily.sans],
+                'dm-sans': ['DM Sans', ...defaultTheme.fontFamily.sans],
+                inter: ['Inter', ...defaultTheme.fontFamily.sans],
             },
         },
     },
