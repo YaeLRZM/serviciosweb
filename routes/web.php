@@ -4,20 +4,37 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::view('admin/dashboard', 'admin.dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('admin.dashboard');
+/*
+|--------------------------------------------------------------------------
+| Rutas de administración
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified' /*, 'can:access-admin' */])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-Route::view('admin/publicaciones', 'admin.publicacion.index')
-    ->middleware(['auth', 'verified'])
-    ->name('admin.publicacion.index');
+        Route::view('/dashboard', 'admin.dashboard')->name('dashboard');
+        Route::view('/profile', 'admin.profile')->name('profile');
 
-Route::view('user/dashboard', 'user.dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('user.dashboard');
+        Route::view('/publicaciones', 'admin.publicacion.index')->name('publicacion.index');
 
-Route::view('admin/profile', 'admin.profile')
-    ->middleware(['auth'])
-    ->name('admin.profile');
+        Route::view('/categorias', 'admin.categoria.index')->name('categorias.index');
+        Route::view('/categorias/{categoriaId}/edit', 'admin.categoria.edit')->name('categorias.edit');
+
+        Route::view('/artesanos', 'admin.artesano.index')->name('artesanos.index');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Rutas de usuario / cliente
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'verified'])
+    ->prefix('user')
+    ->name('user.')
+    ->group(function () {
+        Route::view('/dashboard', 'user.dashboard')->name('dashboard');
+    });
 
 require __DIR__ . '/auth.php';
