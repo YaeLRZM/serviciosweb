@@ -23,6 +23,10 @@ Route::middleware(['auth', 'verified' /*, 'can:access-admin' */])
         Route::view('/categorias/{categoriaId}/edit', 'admin.categoria.edit')->name('categorias.edit');
 
         Route::view('/artesanos', 'admin.artesano.index')->name('artesanos.index');
+
+        Route::view('/usuarios', 'admin.usuario.index')->name('usuarios.index');
+
+        Route::view('/vendedores', 'admin.vendedor.index')->name('vendedores.index');
     });
 
 /*

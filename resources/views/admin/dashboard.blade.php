@@ -1,8 +1,6 @@
 <x-admin-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-[#2B2B2B] leading-tight">
-            {{ __('Página principal') }}
-        </h2>
+        Página principal
     </x-slot>
 
     <div class="py-6">

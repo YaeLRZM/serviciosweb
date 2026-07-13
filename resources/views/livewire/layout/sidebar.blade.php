@@ -15,8 +15,8 @@ $logout = function (Logout $logout) {
         class="border-e border-[#D81B60]/20 bg-[#D81B60] text-[#F8F5F2] [--flux-sidebar-bg:#D81B60]">
 
         <flux:sidebar.header class="flex flex-col items-start gap-2 py-6">
-            <h1 style="font-family: 'Cinzel', serif;" class="text-3xl font-medium leading-none tracking-wide text-[#F8F5F2]">
-                IXÉ<br><span class="text-xl opacity-90">MODA</span>
+            <h1 style="font-family: 'Cinzel', serif;" class="text-5xl font-medium leading-none tracking-wide text-[#F8F5F2]">
+                IXÉ <span style="font-family: 'Cinzel Decorative', serif;" class="text-xl font-cinzel opacity-90">MODA</span>
             </h1>
             <flux:sidebar.collapse class="lg:hidden text-[#F8F5F2]" />
         </flux:sidebar.header>
@@ -24,9 +24,11 @@ $logout = function (Logout $logout) {
         <flux:sidebar.nav>
             <flux:sidebar.group heading="Menú" class="grid gap-2 text-[#F8F5F2]">
                 <x-item-sidebar icon="home" ruta="admin.dashboard" texto="Página principal" />
+                <x-item-sidebar icon="user" ruta="admin.usuarios.index" texto="Usuarios" />
                 <x-item-sidebar icon="publications" ruta="admin.publicacion.index" texto="Publicaciones" />
                 <x-item-sidebar icon="package" ruta="admin.categorias.index" texto="Categorías" />
                 <x-item-sidebar icon="user" ruta="admin.artesanos.index" texto="Artesanos" />
+                <x-item-sidebar icon="tickets" ruta="admin.vendedores.index" texto="Vendedores" />
             </flux:sidebar.group>
         </flux:sidebar.nav>
 

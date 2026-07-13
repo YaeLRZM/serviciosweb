@@ -34,7 +34,7 @@ with(fn() => [
 
     <!-- Tarjetas de Métricas -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-        <div class="bg-[#F2F7F9] rounded-3xl p-6 sm:p-8">
+        <div class="bg-[#F8F5F2] rounded-3xl p-6 sm:p-8">
             <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Clientes Activos</p>
             <div class="flex items-baseline gap-3">
                 <p class="text-5xl font-extrabold text-[#D81B60]">{{ $estadisticas['clientes_activos'] }}</p>
@@ -42,7 +42,7 @@ with(fn() => [
             </div>
         </div>
 
-        <div class="bg-[#F2F7F9] rounded-3xl p-6 sm:p-8">
+        <div class="bg-[#F8F5F2] rounded-3xl p-6 sm:p-8">
             <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Ventas Realizadas</p>
             <div class="flex items-baseline gap-3">
                 <p class="text-5xl font-extrabold text-[#D81B60]">{{ $estadisticas['ventas'] }}</p>

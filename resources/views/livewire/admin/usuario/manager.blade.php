@@ -1,0 +1,63 @@
+<?php
+
+use function Livewire\Volt\{computed};
+
+$stats = computed(fn() => [
+    'total' => 12482,        // TODO: User::count()
+    'flagged' => 24,         // TODO: User::where('estatus', 'Flagged')->count()
+    'artesanos' => 856,      // TODO: User::where('rol', 'Artisan')->where('verificado', true)->count()
+    'nuevos' => 142,         // TODO: User::where('created_at', '>=', now()->subDays(7))->count()
+]);
+?>
+
+<div class="space-y-6">
+
+    {{-- Estadísticas --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <x-admin.stat-mini-card
+            label="Total Users"
+            :value="number_format($this->stats['total'])"
+            trend="+5.2% este mes"
+            trend-color="text-emerald-500"
+            icon-bg="bg-[#D81B60]/10"
+            icon-color="text-[#D81B60]">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+        </x-admin.stat-mini-card>
+
+        <x-admin.stat-mini-card
+            label="Flagged Accounts"
+            :value="$this->stats['flagged']"
+            trend="Requiere revisión inmediata"
+            icon-bg="bg-rose-100"
+            icon-color="text-rose-500">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h1.5V16.5h9l-.75-3 .75-3h-9V3H3z" />
+            </svg>
+        </x-admin.stat-mini-card>
+
+        <x-admin.stat-mini-card
+            label="Active Artisans"
+            :value="$this->stats['artesanos']"
+            trend="Proveedores verificados">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+            </svg>
+        </x-admin.stat-mini-card>
+
+        <x-admin.stat-mini-card
+            label="New Registrations"
+            :value="$this->stats['nuevos']"
+            trend="Últimos 7 días">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+            </svg>
+        </x-admin.stat-mini-card>
+    </div>
+
+    {{-- Tabla --}}
+    <livewire:admin.usuario.table />
+
+    <livewire:admin.usuario.form />
+</div>
