@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            if ($request->is('mobile/*')) {
+                return route('mobile.login');
+            }
+
             return route('login');
         });
     })

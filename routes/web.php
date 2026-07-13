@@ -17,3 +17,4 @@ Route::view('admin/profile', 'admin.profile')
     ->name('admin.profile');
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/mobile.php';
