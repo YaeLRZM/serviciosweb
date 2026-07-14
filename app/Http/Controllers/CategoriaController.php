@@ -13,7 +13,7 @@ class CategoriaController extends Controller
      */
     public function index()
     {
-        //
+        return Categoria::all();
     }
 
     /**
@@ -37,7 +37,7 @@ class CategoriaController extends Controller
      */
     public function show(Categoria $categoria)
     {
-        //
+        return $categoria;
     }
 
     /**
@@ -61,6 +61,7 @@ class CategoriaController extends Controller
      */
     public function destroy(Categoria $categoria)
     {
-        //
+        $categoria->delete();
+        return response()->json(['message' => 'Categoria eliminada correctamente']);
     }
 }

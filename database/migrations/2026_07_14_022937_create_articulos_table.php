@@ -16,7 +16,7 @@ return new class extends Migration
             $table->timestamps();
             $table->foreignId('categoria_id')->constrained()->onDelete('cascade');
             $table->foreignId('artesano_id')->constrained()->onDelete('cascade');
-            $table->foreignId('tiendas_id')->constrained()->onDelete('cascade');
+            $table->foreignId('tienda_id')->constrained()->onDelete('cascade');
             $table->string('nombre');
             $table->text('talla');
             $table->text('color');
