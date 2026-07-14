@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreForma_PagoRequest;
 use App\Http\Requests\UpdateForma_PagoRequest;
-use App\Models\Forma_Pago;
+use App\Models\FormaPago;
 
 class FormaPagoController extends Controller
 {
@@ -35,7 +35,7 @@ class FormaPagoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Forma_Pago $forma_Pago)
+    public function show(FormaPago $formaPago)
     {
         //
     }
@@ -43,7 +43,7 @@ class FormaPagoController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Forma_Pago $forma_Pago)
+    public function edit(FormaPago $formaPago)
     {
         //
     }
@@ -51,7 +51,7 @@ class FormaPagoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateForma_PagoRequest $request, Forma_Pago $forma_Pago)
+    public function update(UpdateForma_PagoRequest $request, FormaPago $formaPago)
     {
         //
     }
@@ -59,7 +59,7 @@ class FormaPagoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Forma_Pago $forma_Pago)
+    public function destroy(FormaPago $formaPago)
     {
         //
     }

@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\Forma_Pago;
+use App\Models\FormaPago;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
@@ -19,7 +19,7 @@ class FormaPagoPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Forma_Pago $formaPago): bool
+    public function view(User $user, FormaPago $formaPago): bool
     {
         return false;
     }
@@ -35,7 +35,7 @@ class FormaPagoPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Forma_Pago $formaPago): bool
+    public function update(User $user, FormaPago $formaPago): bool
     {
         return false;
     }
@@ -43,7 +43,7 @@ class FormaPagoPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Forma_Pago $formaPago): bool
+    public function delete(User $user, FormaPago $formaPago): bool
     {
         return false;
     }
@@ -51,7 +51,7 @@ class FormaPagoPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Forma_Pago $formaPago): bool
+    public function restore(User $user, FormaPago $formaPago): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class FormaPagoPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Forma_Pago $formaPago): bool
+    public function forceDelete(User $user, FormaPago $formaPago): bool
     {
         return false;
     }

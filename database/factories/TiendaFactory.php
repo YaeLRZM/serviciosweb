@@ -18,7 +18,9 @@ class TiendaFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'nombre' => $this->faker->company(),
+            'descripcion' => $this->faker->paragraph(),
+            'rfc_moral' => $this->faker->regexify('[A-Z]{3}[0-9]{6}[A-Z0-9]{3}'),
         ];
     }
 }

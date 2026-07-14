@@ -18,7 +18,9 @@ class InventarioFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'articulo_id' => \App\Models\Articulo::factory(),
+            'stock_actual' => $this->faker->numberBetween(0, 100),
+            'stock_minimo' => $this->faker->numberBetween(0, 10),
         ];
     }
 }

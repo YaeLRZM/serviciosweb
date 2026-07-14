@@ -3,6 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Categoria;
+use App\Models\Carrito;
+use App\Models\Tienda;
+use App\Models\FormaPago;
+use App\Models\Estado;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,7 +20,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory(10)->create();
+        Categoria::factory(5)->create();
+        Tienda::factory(5)->create();
+        FormaPago::factory(5)->create();
+        Estado::factory(5)->create();
+        Carrito::factory(10)->create();
+        
 
         User::factory()->create([
             'nombre' => 'example',
@@ -23,5 +33,6 @@ class DatabaseSeeder extends Seeder
             'apellido_paterno' => 'User',
             'email' => 'test@example.com',
         ]);
+
     }
 }

@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Models\Forma_Pago;
+use App\Models\FormaPago;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Forma_Pago>
+ * @extends Factory<FormaPago>
  */
 class FormaPagoFactory extends Factory
 {
@@ -18,7 +18,7 @@ class FormaPagoFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'nombre' => $this->faker->word(),
         ];
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->timestamps();
             $table->ForeignId('user_id')->constrained()->onDelete('cascade');
-            $table->ForeignId('forma_pago_id')->constrained('forma__pagos')->onDelete('cascade');
+            $table->ForeignId('forma_pago_id')->constrained()->onDelete('cascade');
             $table->ForeignId('tienda_id')->constrained()->onDelete('cascade');
 
             $table->float('total', 8, 2);
