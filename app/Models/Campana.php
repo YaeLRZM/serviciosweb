@@ -5,19 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Categoria extends Model
+class Campana extends Model
 {
-    /** @use HasFactory<\Database\Factories\CategoriaFactory> */
+    /** @use HasFactory<\Database\Factories\CampanaFactory> */
     use HasFactory;
-
     protected $fillable = [
+        'tienda_id',
         'nombre',
-        'descripcion',
+        'fecha_inicio',
+        'fecha_fin',
+        'estado',
     ];
-
-    public function articulos()
+    
+    public function tienda()
     {
-        return $this->hasMany(Articulo::class);
+        return $this->belongsTo(Tienda::class);
     }
     public function detalleCampanas()
     {

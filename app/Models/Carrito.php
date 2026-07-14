@@ -18,4 +18,8 @@ class Carrito extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function detalleCarritos()
+    {
+        return $this->hasMany(Detalle_Carrito::class);
+    }
 }

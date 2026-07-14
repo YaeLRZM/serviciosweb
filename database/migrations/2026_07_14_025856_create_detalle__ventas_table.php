@@ -11,9 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('direccions', function (Blueprint $table) {
+        Schema::create('detalle__ventas', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
+            $table->foreignId('venta_id')->constrained('ventas');
+            $table->foreignId('articulo_id')->constrained('articulos');
+            $table->integer('cantidad');
+            $table->float('precio_unitario', 10, 2);
+            $table->float('subtotal', 10, 2);
         });
     }
 
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('direccions');
+        Schema::dropIfExists('detalle__ventas');
     }
 };

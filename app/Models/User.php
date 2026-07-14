@@ -62,4 +62,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Direccion::class);
     }
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class);
+    }
+    public function detalle_inventarios()
+    {
+        return $this->hasMany(Detalle_Inventario::class);
+    }
+    public function cuponCanjeados()
+    {
+        return $this->hasMany(Cupon_Canjeado::class);
+    }
 }

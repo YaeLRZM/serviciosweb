@@ -27,4 +27,8 @@ class Direccion extends Model
     {
         return $this->belongsTo(Estado::class);
     }
+    public function envios()
+    {
+        return $this->hasMany(Envio::class);
+    }
 }

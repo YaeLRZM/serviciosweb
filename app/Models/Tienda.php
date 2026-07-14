@@ -19,4 +19,16 @@ class Tienda extends Model
     {
         return $this->hasMany(Articulo::class);
     }
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class);
+    }
+    public function campanas()
+    {
+        return $this->hasMany(Campana::class);
+    }
+    public function cupons()
+    {
+        return $this->hasMany(Cupon::class);
+    }
 }

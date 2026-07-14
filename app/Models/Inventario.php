@@ -18,4 +18,8 @@ class Inventario extends Model
     {
         return $this->belongsTo(Articulo::class);
     }
+    public function detalle_inventarios()
+    {
+        return $this->hasMany(Detalle_Inventario::class);
+    }
 }

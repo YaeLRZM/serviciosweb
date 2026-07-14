@@ -44,4 +44,16 @@ class Articulo extends Model
     {
         return $this->hasOne(Inventario::class);
     }
+    public function detalle_ventas()
+    {
+        return $this->hasMany(Detalle_Venta::class);
+    }
+    public function detalle_carritos()
+    {
+        return $this->hasMany(Detalle_Carrito::class);
+    }
+    public function detalle_campanas()
+    {
+        return $this->hasMany(Detalle_Campana::class);
+    }
 }
