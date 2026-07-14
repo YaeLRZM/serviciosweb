@@ -4,6 +4,7 @@ use App\Livewire\Forms\LoginForm;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 new #[Layout('layouts.auth')] class extends Component
 {
@@ -19,6 +20,9 @@ new #[Layout('layouts.auth')] class extends Component
         $this->form->authenticate();
 
         Session::regenerate();
+
+        $token = JWTAuth::fromUser(auth()->user());
+        session(['api_token' => $token]);
 
         $this->redirectIntended(default: route('admin.dashboard', absolute: false), navigate: true);
     }

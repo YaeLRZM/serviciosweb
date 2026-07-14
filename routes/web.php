@@ -9,7 +9,7 @@ Route::view('/', 'welcome');
 | Rutas de administración
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified' /*, 'can:access-admin' */])
+Route::middleware(['auth', 'verified', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

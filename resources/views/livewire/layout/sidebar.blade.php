@@ -27,7 +27,6 @@ $logout = function (Logout $logout) {
                 <x-item-sidebar icon="user" ruta="admin.usuarios.index" texto="Usuarios" />
                 <x-item-sidebar icon="publications" ruta="admin.publicacion.index" texto="Publicaciones" />
                 <x-item-sidebar icon="package" ruta="admin.categorias.index" texto="Categorías" />
-                <x-item-sidebar icon="user" ruta="admin.artesanos.index" texto="Artesanos" />
                 <x-item-sidebar icon="tickets" ruta="admin.vendedores.index" texto="Vendedores" />
             </flux:sidebar.group>
         </flux:sidebar.nav>
