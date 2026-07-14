@@ -63,6 +63,6 @@ class DatabaseSeeder extends Seeder
             'apellido_paterno' => 'User',
             'email' => 'test@example.com',
         ]);
-
+        
     }
 }
