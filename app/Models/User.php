@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<UserFactory> */
     use HasRoles, HasFactory, Notifiable;
@@ -75,4 +76,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(CuponCanjeado::class);
     }
+    
+    /**
+     * Obtiene el identificador que se almacenará en el "subject" (sub) del JWT.
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Devuelve un arreglo de claims personalizados para añadir al JWT.
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
 }

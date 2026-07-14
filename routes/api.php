@@ -7,6 +7,9 @@ use App\Http\Controllers\TiendaController;
 use App\Http\Controllers\FormaPagoController;
 use App\Http\Controllers\EstadoController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
+
+Route::post('login', [AuthController::class, 'login']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
