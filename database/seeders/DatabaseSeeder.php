@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            RolesSeeder::class,
+        ]);
         Categoria::factory(5)->create();
         Tienda::factory(5)->create();
         FormaPago::factory(5)->create();
@@ -63,6 +66,6 @@ class DatabaseSeeder extends Seeder
             'apellido_paterno' => 'User',
             'email' => 'test@example.com',
         ]);
-
+        
     }
 }

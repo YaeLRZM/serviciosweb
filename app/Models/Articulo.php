@@ -13,7 +13,7 @@ class Articulo extends Model
     protected $fillable = [
         'categoria_id',
         'artesano_id',
-        'tiendas_id',
+        'tienda_id',
         'nombre',
         'talla',
         'color',

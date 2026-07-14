@@ -20,7 +20,7 @@ class ArticuloFactory extends Factory
         return [
             'categoria_id' => \App\Models\Categoria::query()->inRandomOrder()->value('id') ?? \App\Models\Categoria::factory(),
             'artesano_id' => \App\Models\Artesano::query()->inRandomOrder()->value('id') ?? \App\Models\Artesano::factory(),
-            'tiendas_id' => \App\Models\Tienda::query()->inRandomOrder()->value('id') ?? \App\Models\Tienda::factory(),
+            'tienda_id' => \App\Models\Tienda::query()->inRandomOrder()->value('id') ?? \App\Models\Tienda::factory(),
             'nombre' => $this->faker->word(),
             'talla' => $this->faker->word(),
             'color' => $this->faker->word(),
