@@ -19,7 +19,9 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'nombre',
+        'apellido_paterno',
+        'apellido_materno',
         'email',
         'password',
     ];
@@ -45,5 +47,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function carrito()
+    {
+        return $this->hasOne(Carrito::class);
+    }
+
+    public function resenas()
+    {
+        return $this->hasMany(Resena::class);
     }
 }
