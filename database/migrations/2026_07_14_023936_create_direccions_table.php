@@ -17,11 +17,12 @@ return new class extends Migration
             $table->ForeignId('user_id')->constrained()->onDelete('cascade');
             $table->ForeignId('estado_id')->constrained()->onDelete('cascade');
             $table->string('calle');
+            $table->string('ciudad');
             $table->string('colonia');
             $table->string('codigo_postal');
             $table->string('pais');
             $table->integer('numero_exterior');
-            $table->integer('numero_interior');
+            $table->integer('numero_interior')->nullable();
 
         });
     }

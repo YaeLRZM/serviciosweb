@@ -18,7 +18,15 @@ class DireccionFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => \App\Models\User::query()->inRandomOrder()->value('id'),
+            'estado_id' => \App\Models\Estado::query()->inRandomOrder()->value('id'),
+            'calle' => $this->faker->streetName(),
+            'numero_exterior' => $this->faker->buildingNumber(),
+            'numero_interior' => $this->faker->optional()->buildingNumber(),
+            'colonia' => $this->faker->citySuffix(),
+            'codigo_postal' => $this->faker->postcode(),
+            'ciudad' => $this->faker->city(),
+            'pais' => $this->faker->country(),
         ];
     }
 }

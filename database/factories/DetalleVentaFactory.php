@@ -18,7 +18,11 @@ class DetalleVentaFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'venta_id' => \App\Models\Venta::factory(),
+            'articulo_id' => \App\Models\Articulo::query()->inRandomOrder()->value('id'),
+            'cantidad' => $this->faker->numberBetween(1, 10),
+            'precio_unitario' => $this->faker->randomFloat(2, 1, 100),
+            'subtotal' => $this->faker->randomFloat(2, 1, 1000),
         ];
     }
 }
