@@ -13,7 +13,7 @@ class TiendaController extends Controller
      */
     public function index()
     {
-        //
+        return Tienda::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class TiendaController extends Controller
      */
     public function store(StoreTiendaRequest $request)
     {
-        //
+        $tienda = Tienda::create($request->validated());
+        return response()->json(['message' => 'Tienda creada correctamente', 'tienda' => $tienda]);
     }
 
     /**
@@ -37,7 +38,7 @@ class TiendaController extends Controller
      */
     public function show(Tienda $tienda)
     {
-        //
+        return $tienda;
     }
 
     /**
@@ -53,7 +54,8 @@ class TiendaController extends Controller
      */
     public function update(UpdateTiendaRequest $request, Tienda $tienda)
     {
-        //
+        $tienda->update($request->validated());
+        return response()->json(['message' => 'Tienda actualizada correctamente', 'tienda' => $tienda]);
     }
 
     /**
@@ -61,6 +63,7 @@ class TiendaController extends Controller
      */
     public function destroy(Tienda $tienda)
     {
-        //
+        $tienda->delete();
+        return response()->json(['message' => 'Tienda eliminada correctamente']);
     }
 }

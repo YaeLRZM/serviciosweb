@@ -12,7 +12,7 @@ class UpdateCategoriaRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,8 @@ class UpdateCategoriaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nombre' => 'sometimes|string|max:255',
+            'descripcion' => 'sometimes|string',
         ];
     }
 }

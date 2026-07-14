@@ -29,7 +29,8 @@ class CategoriaController extends Controller
      */
     public function store(StoreCategoriaRequest $request)
     {
-        //
+        $categoria = Categoria::create($request->validated());
+        return response()->json(['message' => 'Categoria creada correctamente', 'categoria' => $categoria], 201);
     }
 
     /**
@@ -53,7 +54,8 @@ class CategoriaController extends Controller
      */
     public function update(UpdateCategoriaRequest $request, Categoria $categoria)
     {
-        //
+        $categoria->update($request->validated());
+        return response()->json(['message' => 'Categoria actualizada correctamente', 'categoria' => $categoria]);
     }
 
     /**

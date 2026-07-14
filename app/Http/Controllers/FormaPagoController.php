@@ -13,7 +13,7 @@ class FormaPagoController extends Controller
      */
     public function index()
     {
-        //
+        return FormaPago::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class FormaPagoController extends Controller
      */
     public function store(StoreForma_PagoRequest $request)
     {
-        //
+        FormaPago::create($request->validated());
+        return response()->json(['message' => 'Forma de pago creada correctamente', 'forma_pago' => $request->validated()]);
     }
 
     /**
@@ -37,7 +38,7 @@ class FormaPagoController extends Controller
      */
     public function show(FormaPago $formaPago)
     {
-        //
+        return $formaPago;
     }
 
     /**
@@ -53,7 +54,8 @@ class FormaPagoController extends Controller
      */
     public function update(UpdateForma_PagoRequest $request, FormaPago $formaPago)
     {
-        //
+        $formaPago->update($request->validated());
+        return response()->json(['message' => 'Forma de pago actualizada correctamente', 'forma_pago' => $formaPago]);
     }
 
     /**
@@ -61,6 +63,7 @@ class FormaPagoController extends Controller
      */
     public function destroy(FormaPago $formaPago)
     {
-        //
+        $formaPago->delete();
+        return response()->json(['message' => 'Forma de pago eliminada correctamente']);
     }
 }

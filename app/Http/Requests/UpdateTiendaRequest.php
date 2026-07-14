@@ -12,7 +12,7 @@ class UpdateTiendaRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,9 @@ class UpdateTiendaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nombre' => 'sometimes|string|max:255',
+            'descripcion' => 'sometimes|string|nullable',
+            'rfc_moral' => 'sometimes|string|max:12',
         ];
     }
 }
