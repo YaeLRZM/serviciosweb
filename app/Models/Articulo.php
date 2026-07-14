@@ -54,6 +54,6 @@ class Articulo extends Model
     }
     public function detalle_campanas()
     {
-        return $this->hasMany(Detalle_Campana::class);
+        return $this->hasMany(DetalleCampana::class);
     }
 }

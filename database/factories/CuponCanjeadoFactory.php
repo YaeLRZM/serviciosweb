@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Models\Cupon_Canjeado;
+use App\Models\CuponCanjeado;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Cupon_Canjeado>
+ * @extends Factory<CuponCanjeado>
  */
 class CuponCanjeadoFactory extends Factory
 {

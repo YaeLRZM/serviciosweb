@@ -21,6 +21,6 @@ class Categoria extends Model
     }
     public function detalleCampanas()
     {
-        return $this->hasMany(Detalle_Campana::class);
+        return $this->hasMany(DetalleCampana::class);
     }
 }

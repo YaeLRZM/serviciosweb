@@ -72,6 +72,6 @@ class User extends Authenticatable
     }
     public function cuponCanjeados()
     {
-        return $this->hasMany(Cupon_Canjeado::class);
+        return $this->hasMany(CuponCanjeado::class);
     }
 }

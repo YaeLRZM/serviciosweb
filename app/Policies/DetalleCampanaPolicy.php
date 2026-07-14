@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\Detalle_Campana;
+use App\Models\DetalleCampana;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
@@ -19,7 +19,7 @@ class DetalleCampanaPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Detalle_Campana $detalleCampana): bool
+    public function view(User $user, DetalleCampana $detalleCampana): bool
     {
         return false;
     }
@@ -35,7 +35,7 @@ class DetalleCampanaPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Detalle_Campana $detalleCampana): bool
+    public function update(User $user, DetalleCampana $detalleCampana): bool
     {
         return false;
     }
@@ -43,7 +43,7 @@ class DetalleCampanaPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Detalle_Campana $detalleCampana): bool
+    public function delete(User $user, DetalleCampana $detalleCampana): bool
     {
         return false;
     }
@@ -51,7 +51,7 @@ class DetalleCampanaPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Detalle_Campana $detalleCampana): bool
+    public function restore(User $user, DetalleCampana $detalleCampana): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class DetalleCampanaPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Detalle_Campana $detalleCampana): bool
+    public function forceDelete(User $user, DetalleCampana $detalleCampana): bool
     {
         return false;
     }

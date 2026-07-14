@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCupon_CanjeadoRequest;
 use App\Http\Requests\UpdateCupon_CanjeadoRequest;
-use App\Models\Cupon_Canjeado;
+use App\Models\CuponCanjeado;
 
 class CuponCanjeadoController extends Controller
 {
@@ -35,7 +35,7 @@ class CuponCanjeadoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Cupon_Canjeado $cupon_Canjeado)
+    public function show(CuponCanjeado $cuponCanjeado)
     {
         //
     }
@@ -43,7 +43,7 @@ class CuponCanjeadoController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Cupon_Canjeado $cupon_Canjeado)
+    public function edit(CuponCanjeado $cuponCanjeado)
     {
         //
     }
@@ -51,7 +51,7 @@ class CuponCanjeadoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCupon_CanjeadoRequest $request, Cupon_Canjeado $cupon_Canjeado)
+    public function update(UpdateCupon_CanjeadoRequest $request, CuponCanjeado $cuponCanjeado)
     {
         //
     }
@@ -59,7 +59,7 @@ class CuponCanjeadoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Cupon_Canjeado $cupon_Canjeado)
+    public function destroy(CuponCanjeado $cuponCanjeado)
     {
         //
     }

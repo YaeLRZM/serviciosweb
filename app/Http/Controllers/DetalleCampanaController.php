@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDetalle_CampanaRequest;
 use App\Http\Requests\UpdateDetalle_CampanaRequest;
-use App\Models\Detalle_Campana;
+use App\Models\DetalleCampana;
 
 class DetalleCampanaController extends Controller
 {
@@ -35,7 +35,7 @@ class DetalleCampanaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Detalle_Campana $detalle_Campana)
+    public function show(DetalleCampana $detalleCampana)
     {
         //
     }
@@ -43,7 +43,7 @@ class DetalleCampanaController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Detalle_Campana $detalle_Campana)
+    public function edit(DetalleCampana $detalleCampana)
     {
         //
     }
@@ -51,7 +51,7 @@ class DetalleCampanaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateDetalle_CampanaRequest $request, Detalle_Campana $detalle_Campana)
+    public function update(UpdateDetalle_CampanaRequest $request, DetalleCampana $detalleCampana)
     {
         //
     }
@@ -59,7 +59,7 @@ class DetalleCampanaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Detalle_Campana $detalle_Campana)
+    public function destroy(DetalleCampana $detalleCampana)
     {
         //
     }

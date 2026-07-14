@@ -44,6 +44,6 @@ class Venta extends Model
     }
     public function cuponCanjeados()
     {
-        return $this->hasMany(Cupon_Canjeado::class);
+        return $this->hasMany(CuponCanjeado::class);
     }
 }
