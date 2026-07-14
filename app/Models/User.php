@@ -58,4 +58,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Resena::class);
     }
+    public function direcciones()
+    {
+        return $this->hasMany(Direccion::class);
+    }
 }
