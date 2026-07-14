@@ -18,7 +18,11 @@ class CampanaFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'tienda_id' => \App\Models\Tienda::query()->inRandomOrder()->first()->id,
+            'nombre' => $this->faker->word(),
+            'fecha_inicio' => $this->faker->date(),
+            'fecha_fin' => $this->faker->date(),
+            'estado' => $this->faker->randomElement(['activa', 'inactiva']),
         ];
     }
 }

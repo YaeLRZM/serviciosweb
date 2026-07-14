@@ -5,22 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Detalle_Inventario extends Model
+class CuponCanjeado extends Model
 {
-    /** @use HasFactory<\Database\Factories\DetalleInventarioFactory> */
+    /** @use HasFactory<\Database\Factories\CuponCanjeadoFactory> */
     use HasFactory;
     protected $fillable = [
-        'inventario_id',
+        'cupon_id',
         'user_id',
         'venta_id',
-        'tipo_movimiento',
-        'observaciones',
-        'cantidad'
+        'monto_descuento',
+        'fecha_canje',
     ];
 
-    public function inventario()
+    public function cupon()
     {
-        return $this->belongsTo(Inventario::class);
+        return $this->belongsTo(Cupon::class);
     }
     public function user()
     {
@@ -30,4 +29,5 @@ class Detalle_Inventario extends Model
     {
         return $this->belongsTo(Venta::class);
     }
+
 }

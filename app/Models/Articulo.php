@@ -50,7 +50,7 @@ class Articulo extends Model
     }
     public function detalle_carritos()
     {
-        return $this->hasMany(Detalle_Carrito::class);
+        return $this->hasMany(DetalleCarrito::class);
     }
     public function detalle_campanas()
     {

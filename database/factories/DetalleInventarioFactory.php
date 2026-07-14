@@ -18,7 +18,12 @@ class DetalleInventarioFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'inventario_id' => \App\Models\Inventario::query()->inRandomOrder()->value('id'),
+            'user_id' => \App\Models\User::query()->inRandomOrder()->value('id'),
+            'venta_id' => \App\Models\Venta::query()->inRandomOrder()->value('id'),
+            'tipo_movimiento' => $this->faker->randomElement(['entrada', 'salida']),
+            'observaciones' => $this->faker->sentence(),
+            'cantidad' => $this->faker->numberBetween(1, 100),
         ];
     }
 }

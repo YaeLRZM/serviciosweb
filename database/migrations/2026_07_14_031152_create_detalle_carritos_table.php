@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detalle__campanas', function (Blueprint $table) {
+        Schema::create('detalle_carritos', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->foreignId('campana_id')->constrained()->onDelete('cascade');
+            $table->foreignId('carrito_id')->constrained()->onDelete('cascade');
             $table->foreignId('articulo_id')->constrained()->onDelete('cascade');
-            $table->foreignId('categoria_id')->constrained()->onDelete('cascade');
-            $table->integer('porcentaje_descuento');
-            $table->float('precio_fijo_oferta');
+            $table->integer('cantidad');
+            $table->decimal('precio_unitario', 8, 2);
         });
     }
 
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('detalle__campanas');
+        Schema::dropIfExists('detalle_carritos');
     }
 };

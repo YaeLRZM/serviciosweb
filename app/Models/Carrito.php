@@ -20,6 +20,6 @@ class Carrito extends Model
     }
     public function detalleCarritos()
     {
-        return $this->hasMany(Detalle_Carrito::class);
+        return $this->hasMany(DetalleCarrito::class);
     }
 }

@@ -18,7 +18,12 @@ class VendedorFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'tienda_id' => \App\Models\Tienda::query()->inRandomOrder()->value('id'),
+            'user_id' => \App\Models\User::query()->inRandomOrder()->value('id'),
+            'codigo_ine' => $this->faker->regexify('[A-Z0-9]{13}'),
+            'foto_frontal_ine_link' => $this->faker->imageUrl(640, 480, 'people', true),
+            'foto_trasera_ine_link' => $this->faker->imageUrl(640, 480, 'people', true),
+            'estatus' => $this->faker->randomElement(['activo', 'inactivo']),
         ];
     }
 }

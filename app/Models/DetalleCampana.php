@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Detalle_Campana extends Model
+class DetalleCampana extends Model
 {
     /** @use HasFactory<\Database\Factories\DetalleCampanaFactory> */
     use HasFactory;

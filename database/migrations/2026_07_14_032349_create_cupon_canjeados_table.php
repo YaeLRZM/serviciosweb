@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cupon__canjeados', function (Blueprint $table) {
+        Schema::create('cupon_canjeados', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
             $table->foreignId('cupon_id')->constrained()->onDelete('cascade');
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cupon__canjeados');
+        Schema::dropIfExists('cupon_canjeados');
     }
 };

@@ -18,7 +18,11 @@ class CuponCanjeadoFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'cupon_id' => \App\Models\Cupon::query()->inRandomOrder()->first()->id,
+            'user_id' => \App\Models\User::query()->inRandomOrder()->first()->id,
+            'venta_id' => \App\Models\Venta::query()->inRandomOrder()->first()->id,
+            'monto_descuento' => $this->faker->randomFloat(2, 1, 100),
+            'fecha_canje' => $this->faker->dateTimeBetween('-1 year', 'now'),
         ];
     }
 }

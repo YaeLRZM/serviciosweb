@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDetalle_CarritoRequest;
 use App\Http\Requests\UpdateDetalle_CarritoRequest;
-use App\Models\Detalle_Carrito;
+use App\Models\DetalleCarrito;
 
 class DetalleCarritoController extends Controller
 {
@@ -35,7 +35,7 @@ class DetalleCarritoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Detalle_Carrito $detalle_Carrito)
+    public function show(DetalleCarrito $detalleCarrito)
     {
         //
     }
@@ -43,7 +43,7 @@ class DetalleCarritoController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Detalle_Carrito $detalle_Carrito)
+    public function edit(DetalleCarrito $detalleCarrito)
     {
         //
     }
@@ -51,7 +51,7 @@ class DetalleCarritoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateDetalle_CarritoRequest $request, Detalle_Carrito $detalle_Carrito)
+    public function update(UpdateDetalle_CarritoRequest $request, DetalleCarrito $detalleCarrito)
     {
         //
     }
@@ -59,7 +59,7 @@ class DetalleCarritoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Detalle_Carrito $detalle_Carrito)
+    public function destroy(DetalleCarrito $detalleCarrito)
     {
         //
     }
