@@ -23,6 +23,7 @@ use App\Models\Campana;
 use App\Models\DetalleCampana;
 use App\Models\Cupon;
 use App\Models\CuponCanjeado;
+use App\Models\ImagenArticulo;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -59,7 +60,7 @@ class DatabaseSeeder extends Seeder
         DetalleCampana::factory(50)->create();
         Cupon::factory(10)->create();
         CuponCanjeado::factory(10)->create();
-
+        ImagenArticulo::factory(50)->create();
         User::factory()->create([
             'nombre' => 'example',
             'apellido_materno' => 'Test',

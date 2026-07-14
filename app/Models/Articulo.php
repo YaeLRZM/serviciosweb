@@ -56,4 +56,8 @@ class Articulo extends Model
     {
         return $this->hasMany(DetalleCampana::class);
     }
+    public function imagenes()
+    {
+        return $this->hasMany(ImagenArticulo::class);
+    }
 }
