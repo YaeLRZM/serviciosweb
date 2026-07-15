@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tienda extends Model
 {
-    /** @use HasFactory<\Database\Factories\TiendaFactory> */
     use HasFactory;
     protected $fillable = [
         'nombre',

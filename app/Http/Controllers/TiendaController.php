@@ -4,24 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTiendaRequest;
 use App\Http\Requests\UpdateTiendaRequest;
+use App\Http\Resources\TiendaResource;
 use App\Models\Tienda;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    schema: 'Tienda',
+    title: 'Tienda',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'nombre', type: 'string', example: 'Artesanías del Sur'),
+    ],
+    type: 'object'
+)]
 class TiendaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    #[OA\Get(
+        path: '/api/tiendas',
+        summary: 'Listar tiendas (público)',
+        tags: ['Tiendas'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Listado de tiendas',
+                content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/Tienda'))
+            ),
+        ]
+    )]
     public function index()
     {
-        return Tienda::all();
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return TiendaResource::collection(Tienda::all());
     }
 
     /**
@@ -30,23 +42,24 @@ class TiendaController extends Controller
     public function store(StoreTiendaRequest $request)
     {
         $tienda = Tienda::create($request->validated());
-        return response()->json(['message' => 'Tienda creada correctamente', 'tienda' => $tienda]);
+        return response()->json(['message' => 'Tienda creada correctamente', 'tienda' => $tienda], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    #[OA\Get(
+        path: '/api/tiendas/{id}',
+        summary: 'Ver una tienda (público)',
+        tags: ['Tiendas'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Tienda encontrada', content: new OA\JsonContent(ref: '#/components/schemas/Tienda')),
+            new OA\Response(response: 404, description: 'No encontrada'),
+        ]
+    )]
     public function show(Tienda $tienda)
     {
-        return $tienda;
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Tienda $tienda)
-    {
-        //
+        return new TiendaResource($tienda);
     }
 
     /**

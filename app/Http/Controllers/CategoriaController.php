@@ -5,12 +5,32 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCategoriaRequest;
 use App\Http\Requests\UpdateCategoriaRequest;
 use App\Models\Categoria;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    schema: 'Categoria',
+    title: 'Categoria',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'nombre', type: 'string', example: 'Textiles'),
+        new OA\Property(property: 'descripcion', type: 'string', example: 'Prendas tejidas a mano'),
+    ],
+    type: 'object'
+)]
 class CategoriaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    #[OA\Get(
+        path: '/api/categorias',
+        summary: 'Listar categorías (público)',
+        tags: ['Categorias'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Listado de categorías',
+                content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/Categoria'))
+            ),
+        ]
+    )]
     public function index()
     {
         return Categoria::all();
@@ -33,9 +53,18 @@ class CategoriaController extends Controller
         return response()->json(['message' => 'Categoria creada correctamente', 'categoria' => $categoria], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    #[OA\Get(
+        path: '/api/categorias/{id}',
+        summary: 'Ver una categoría (público)',
+        tags: ['Categorias'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Categoría encontrada', content: new OA\JsonContent(ref: '#/components/schemas/Categoria')),
+            new OA\Response(response: 404, description: 'No encontrada'),
+        ]
+    )]
     public function show(Categoria $categoria)
     {
         return $categoria;

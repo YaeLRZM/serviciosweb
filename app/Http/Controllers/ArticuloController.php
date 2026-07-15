@@ -4,24 +4,111 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreArticuloRequest;
 use App\Http\Requests\UpdateArticuloRequest;
+use App\Http\Resources\ArticuloResource;
 use App\Models\Articulo;
+use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
+#[OA\Schema(
+    schema: 'Articulo',
+    title: 'Articulo',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'nombre', type: 'string', example: 'Huipil bordado de Oaxaca'),
+        new OA\Property(property: 'talla', type: 'string', example: 'M'),
+        new OA\Property(property: 'color', type: 'string', example: 'Rojo'),
+        new OA\Property(property: 'bordado', type: 'string', example: 'Punto de cruz'),
+        new OA\Property(property: 'tela', type: 'string', example: 'Manta'),
+        new OA\Property(property: 'region', type: 'string', example: 'Oaxaca'),
+        new OA\Property(
+            property: 'categoria',
+            properties: [
+                new OA\Property(property: 'id', type: 'integer', example: 1),
+                new OA\Property(property: 'nombre', type: 'string', example: 'Textiles'),
+                new OA\Property(property: 'descripcion', type: 'string', example: 'Prendas tejidas a mano'),
+            ],
+            type: 'object'
+        ),
+        new OA\Property(
+            property: 'artesano',
+            properties: [
+                new OA\Property(property: 'id', type: 'integer', example: 1),
+                new OA\Property(property: 'nombre', type: 'string', example: 'María López'),
+            ],
+            type: 'object'
+        ),
+        new OA\Property(
+            property: 'tienda',
+            properties: [
+                new OA\Property(property: 'id', type: 'integer', example: 1),
+                new OA\Property(property: 'nombre', type: 'string', example: 'Artesanías del Sur'),
+            ],
+            type: 'object'
+        ),
+        new OA\Property(
+            property: 'imagenes',
+            type: 'array',
+            items: new OA\Items(
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer', example: 1),
+                    new OA\Property(property: 'url', type: 'string', example: 'https://images.unsplash.com/photo-123?w=800'),
+                    new OA\Property(property: 'es_principal', type: 'boolean', example: true),
+                ],
+                type: 'object'
+            )
+        ),
+    ],
+    type: 'object'
+)]
 class ArticuloController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    #[OA\Get(
+        path: '/api/articulos',
+        summary: 'Listar artículos (público, sin autenticación)',
+        description: 'Devuelve todos los artículos con su categoría, artesano, tienda e imágenes. '
+            . 'Acepta filtros opcionales por query string; si no se envía ninguno se devuelven todos.',
+        tags: ['Articulos'],
+        parameters: [
+            new OA\Parameter(name: 'categoria', in: 'query', required: false, description: 'ID de la categoría', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'artesano', in: 'query', required: false, description: 'ID del artesano', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'tienda', in: 'query', required: false, description: 'ID de la tienda', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'color', in: 'query', required: false, description: 'Color exacto', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'bordado', in: 'query', required: false, description: 'Tipo de bordado', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'tela', in: 'query', required: false, description: 'Tipo de tela', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'region', in: 'query', required: false, description: 'Región de origen', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Listado de artículos',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/Articulo')
+                        ),
+                    ],
+                    type: 'object'
+                )
+            ),
+        ]
+    )]
+    public function index(Request $request)
     {
-        //
-    }
+        $articulos = Articulo::with(['categoria', 'artesano', 'tienda', 'imagenes'])
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+            ->when($request->filled('categoria'), fn ($q) => $q->where('categoria_id', $request->input('categoria')))
+            ->when($request->filled('artesano'), fn ($q) => $q->where('artesano_id', $request->input('artesano')))
+            ->when($request->filled('tienda'), fn ($q) => $q->where('tienda_id', $request->input('tienda')))
+
+            ->when($request->filled('color'), fn ($q) => $q->where('color', $request->input('color')))
+            ->when($request->filled('bordado'), fn ($q) => $q->where('bordado', $request->input('bordado')))
+            ->when($request->filled('tela'), fn ($q) => $q->where('tela', $request->input('tela')))
+            ->when($request->filled('region'), fn ($q) => $q->where('region', $request->input('region')))
+            ->get();
+
+        return ArticuloResource::collection($articulos);
     }
 
     /**
@@ -32,20 +119,30 @@ class ArticuloController extends Controller
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
+    #[OA\Get(
+        path: '/api/articulos/{id}',
+        summary: 'Ver un artículo (público, sin autenticación)',
+        tags: ['Articulos'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID del artículo', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Artículo encontrado',
+                content: new OA\JsonContent(
+                    properties: [new OA\Property(property: 'data', ref: '#/components/schemas/Articulo')],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(response: 404, description: 'Artículo no encontrado'),
+        ]
+    )]
     public function show(Articulo $articulo)
     {
-        //
-    }
+        $articulo->load(['categoria', 'artesano', 'tienda', 'imagenes']);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Articulo $articulo)
-    {
-        //
+        return new ArticuloResource($articulo);
     }
 
     /**

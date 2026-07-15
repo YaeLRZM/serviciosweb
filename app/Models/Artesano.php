@@ -11,6 +11,11 @@ class Artesano extends Model
     use HasFactory;
     protected $fillable = ['nombre'];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
     public function articulos()
     {
         return $this->hasMany(Articulo::class);
