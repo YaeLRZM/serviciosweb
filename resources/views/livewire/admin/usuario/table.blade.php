@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Usuarios\UsuariosDataService;
 use function Livewire\Volt\{state, computed};
 
 state([
@@ -7,42 +8,55 @@ state([
     'estatus' => 'Todos',
     'busqueda' => '',
     'page' => 1,
+    'error' => null,
 ]);
 
-$roles = computed(fn() => ['Todos', 'Customer', 'Buyer', 'Artisan']);
-$estatuses = computed(fn() => ['Todos', 'Active', 'Suspended', 'Flagged']);
+$roles = computed(fn() => ['Todos' => 'Todos los roles', 'admin' => 'Administrador', 'user' => 'Usuario', 'guest' => 'Invitado']);
+$estatuses = computed(fn() => ['Todos' => 'Todos los estatus', 'activo' => 'Activo', 'suspendido' => 'Suspendido', 'marcado' => 'Marcado']);
 
 $rolBadges = computed(fn() => [
-    'Customer' => 'bg-neutral-100 text-neutral-600',
-    'Buyer'    => 'bg-sky-50 text-sky-700',
-    'Artisan'  => 'bg-[#D81B60]/10 text-[#D81B60]',
+    'admin' => 'bg-[#D81B60]/10 text-[#D81B60]',
+    'user'  => 'bg-sky-50 text-sky-700',
+    'guest' => 'bg-neutral-100 text-neutral-600',
 ]);
 
 $estatusBadges = computed(fn() => [
-    'Active'    => ['dot' => 'bg-emerald-500', 'text' => 'bg-emerald-50 text-emerald-600'],
-    'Suspended' => ['dot' => 'bg-neutral-400', 'text' => 'bg-neutral-100 text-neutral-500'],
-    'Flagged'   => ['dot' => 'bg-rose-500', 'text' => 'bg-rose-50 text-rose-600'],
+    'activo'     => ['dot' => 'bg-emerald-500', 'text' => 'bg-emerald-50 text-emerald-600'],
+    'suspendido' => ['dot' => 'bg-neutral-400', 'text' => 'bg-neutral-100 text-neutral-500'],
+    'marcado'    => ['dot' => 'bg-rose-500', 'text' => 'bg-rose-50 text-rose-600'],
 ]);
 
-// TODO: reemplazar por User::query()->with('roles')->...
-$dataset = computed(fn() => collect([
-    ['id' => 1, 'nombre' => 'Alejandro Ruiz', 'codigo' => 'UA-8219', 'email' => 'a.ruiz@example.mx', 'foto' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200', 'rol' => 'Buyer', 'estatus' => 'Flagged', 'ingreso' => '12 Oct 2023'],
-    ['id' => 2, 'nombre' => 'Elena Montes', 'codigo' => 'UA-1044', 'email' => 'elena.m@textiles.com', 'foto' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200', 'rol' => 'Artisan', 'estatus' => 'Active', 'ingreso' => '05 Ene 2024'],
-    ['id' => 3, 'nombre' => 'Roberto Sanchez', 'codigo' => 'UA-4590', 'email' => 'rs.92@webmail.mx', 'foto' => null, 'rol' => 'Customer', 'estatus' => 'Suspended', 'ingreso' => '20 Dic 2023'],
-    ['id' => 4, 'nombre' => 'Julian Cordoba', 'codigo' => 'UA-9921', 'email' => 'j.cordoba@design.com', 'foto' => 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200', 'rol' => 'Customer', 'estatus' => 'Active', 'ingreso' => '11 Feb 2024'],
-]));
+$dataset = computed(function () {
+    $filtros = array_filter([
+        'rol' => $this->rol !== 'Todos' ? $this->rol : null,
+        'estatus' => $this->estatus !== 'Todos' ? $this->estatus : null,
+        'busqueda' => $this->busqueda !== '' ? $this->busqueda : null,
+    ]);
+
+    try {
+        $this->error = null;
+
+        return collect(app(UsuariosDataService::class)->listar($filtros))->map(fn($u) => [
+            'id' => $u['id'],
+            'nombre' => $u['name'],
+            'codigo' => 'UA-' . str_pad($u['id'], 4, '0', STR_PAD_LEFT),
+            'email' => $u['email'],
+            'foto' => null,
+            'rol' => $u['rol'] ?? 'user',
+            'estatus' => $u['estatus'] ?? 'activo',
+            'ingreso' => \Illuminate\Support\Carbon::parse($u['created_at'])->translatedFormat('d M Y'),
+        ]);
+    } catch (\RuntimeException $e) {
+        $this->error = $e->getMessage();
+
+        return collect();
+    }
+});
 
 $filtered = computed(function () {
     $perPage = 10;
 
-    $items = $this->dataset
-        ->when($this->rol !== 'Todos', fn($q) => $q->where('rol', $this->rol))
-        ->when($this->estatus !== 'Todos', fn($q) => $q->where('estatus', $this->estatus))
-        ->when($this->busqueda !== '', fn($q) => $q->filter(
-            fn($item) => str_contains(mb_strtolower($item['nombre']), mb_strtolower($this->busqueda))
-                || str_contains(mb_strtolower($item['email']), mb_strtolower($this->busqueda))
-        ))
-        ->values();
+    $items = $this->dataset->values();
 
     $total = $items->count();
     $totalPages = max(1, (int) ceil($total / $perPage));
@@ -61,32 +75,61 @@ $irAPagina = function ($p) {
 };
 
 $alternarSuspension = function ($id) {
-    // TODO: User::find($id)->update(['estatus' => $estatus === 'Suspended' ? 'Active' : 'Suspended']);
-    session()->flash('mensaje', 'Estatus del usuario actualizado.');
+    $actual = $this->dataset->firstWhere('id', $id);
+    $nuevoEstatus = ($actual['estatus'] ?? 'activo') === 'suspendido' ? 'activo' : 'suspendido';
+
+    try {
+        app(UsuariosDataService::class)->actualizar($id, ['estatus' => $nuevoEstatus]);
+        unset($this->dataset);
+        session()->flash('mensaje', 'Estatus del usuario actualizado.');
+    } catch (\RuntimeException $e) {
+        session()->flash('error', $e->getMessage());
+    }
 };
 
 $eliminar = function ($id) {
-    // TODO: User::find($id)->delete();
-    session()->flash('mensaje', 'Usuario eliminado.');
+    try {
+        app(UsuariosDataService::class)->eliminar($id);
+        unset($this->dataset);
+        session()->flash('mensaje', 'Usuario eliminado.');
+    } catch (\RuntimeException $e) {
+        session()->flash('error', $e->getMessage());
+    }
 };
 ?>
 
-<div class="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+<div class="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden" x-on:usuario-actualizado.window="$wire.$refresh()">
+
+    @if ($error)
+    <div class="m-5 bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl font-bold">
+        {{ $error }}
+    </div>
+    @endif
 
     {{-- Filtros --}}
     <div class="flex flex-col md:flex-row gap-3 justify-between items-center p-5 border-b border-neutral-100 bg-neutral-50/40">
-        <div class="flex flex-wrap gap-2">
-            <select wire:model.live="rol" class="bg-white border-neutral-200 rounded-full text-sm px-4 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]">
-                @foreach ($this->roles as $r)
-                <option value="{{ $r }}">{{ $r === 'Todos' ? 'Todos los roles' : $r }}</option>
-                @endforeach
-            </select>
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+                <select wire:model.live="rol" class="appearance-none bg-white border-neutral-200 rounded-full text-sm py-2 pl-4 pr-9 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] cursor-pointer">
+                    @foreach ($this->roles as $valor => $etiqueta)
+                    <option value="{{ $valor }}">{{ $etiqueta }}</option>
+                    @endforeach
+                </select>
+                <svg class="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
 
-            <select wire:model.live="estatus" class="bg-white border-neutral-200 rounded-full text-sm px-4 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]">
-                @foreach ($this->estatuses as $e)
-                <option value="{{ $e }}">{{ $e === 'Todos' ? 'Todos los estatus' : $e }}</option>
-                @endforeach
-            </select>
+            <div class="relative">
+                <select wire:model.live="estatus" class="appearance-none bg-white border-neutral-200 rounded-full text-sm py-2 pl-4 pr-9 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] cursor-pointer">
+                    @foreach ($this->estatuses as $valor => $etiqueta)
+                    <option value="{{ $valor }}">{{ $etiqueta }}</option>
+                    @endforeach
+                </select>
+                <svg class="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
 
             <div class="relative">
                 <input
@@ -97,7 +140,18 @@ $eliminar = function ($id) {
             </div>
         </div>
 
-        <p class="text-sm text-neutral-500">Mostrando {{ $this->filtered['items']->count() }} de {{ $this->filtered['total'] }} usuarios</p>
+        <div class="flex items-center gap-4">
+            <p class="text-sm text-neutral-500 whitespace-nowrap">Mostrando {{ $this->filtered['items']->count() }} de {{ $this->filtered['total'] }} usuarios</p>
+
+            <button
+                wire:click="$dispatch('crearUsuario')"
+                class="flex items-center gap-1.5 bg-[#D81B60] hover:bg-[#b0124a] text-white text-sm font-bold pl-3 pr-4 py-2 rounded-full shadow-sm transition whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nuevo usuario
+            </button>
+        </div>
     </div>
 
     {{-- Tabla --}}
@@ -115,7 +169,7 @@ $eliminar = function ($id) {
             </thead>
             <tbody class="divide-y divide-neutral-100">
                 @forelse ($this->filtered['items'] as $item)
-                <tr class="hover:bg-neutral-50/60 transition {{ $item['estatus'] === 'Suspended' ? 'opacity-70' : '' }}">
+                <tr class="hover:bg-neutral-50/60 transition {{ $item['estatus'] === 'suspendido' ? 'opacity-70' : '' }}">
                     <td class="px-5 py-4">
                         <div class="flex items-center gap-3">
                             @if ($item['foto'])
@@ -136,29 +190,19 @@ $eliminar = function ($id) {
                     <td class="px-5 py-4 text-neutral-600">{{ $item['email'] }}</td>
                     <td class="px-5 py-4">
                         <span class="text-xs font-medium px-3 py-1 rounded-full {{ $this->rolBadges[$item['rol']] ?? 'bg-neutral-100 text-neutral-600' }}">
-                            {{ $item['rol'] }}
+                            {{ $this->roles[$item['rol']] ?? $item['rol'] }}
                         </span>
                     </td>
                     <td class="px-5 py-4">
                         @php $eb = $this->estatusBadges[$item['estatus']] ?? ['dot' => 'bg-neutral-400', 'text' => 'bg-neutral-100 text-neutral-600']; @endphp
                         <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full {{ $eb['text'] }}">
                             <span class="w-1.5 h-1.5 rounded-full {{ $eb['dot'] }}"></span>
-                            {{ $item['estatus'] }}
+                            {{ $this->estatuses[$item['estatus']] ?? $item['estatus'] }}
                         </span>
                     </td>
                     <td class="px-5 py-4 text-neutral-500">{{ $item['ingreso'] }}</td>
                     <td class="px-5 py-4">
                         <div class="flex items-center justify-end gap-1">
-                            <button
-                                wire:click="$dispatch('abrirUsuario', { id: {{ $item['id'] }} })"
-                                class="w-8 h-8 rounded-full hover:bg-[#D81B60]/10 flex items-center justify-center text-[#D81B60] transition"
-                                title="Ver perfil">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </button>
-
                             <button
                                 wire:click="$dispatch('abrirUsuario', { id: {{ $item['id'] }}, editar: true })"
                                 class="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-500 transition"
@@ -168,7 +212,7 @@ $eliminar = function ($id) {
                                 </svg>
                             </button>
 
-                            @if ($item['estatus'] === 'Suspended')
+                            @if ($item['estatus'] === 'suspendido')
                             <button
                                 wire:click="alternarSuspension({{ $item['id'] }})"
                                 class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 transition"
