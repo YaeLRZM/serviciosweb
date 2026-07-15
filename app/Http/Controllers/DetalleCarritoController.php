@@ -13,7 +13,7 @@ class DetalleCarritoController extends Controller
      */
     public function index()
     {
-        //
+        return DetalleCarrito::all();
     }
 
     /**
@@ -29,7 +29,7 @@ class DetalleCarritoController extends Controller
      */
     public function store(StoreDetalle_CarritoRequest $request)
     {
-        //
+        return DetalleCarrito::create($request->all());
     }
 
     /**
@@ -37,7 +37,7 @@ class DetalleCarritoController extends Controller
      */
     public function show(DetalleCarrito $detalleCarrito)
     {
-        //
+        return $detalleCarrito;
     }
 
     /**
@@ -53,7 +53,7 @@ class DetalleCarritoController extends Controller
      */
     public function update(UpdateDetalle_CarritoRequest $request, DetalleCarrito $detalleCarrito)
     {
-        //
+        return $detalleCarrito->update($request->all());
     }
 
     /**
@@ -61,6 +61,6 @@ class DetalleCarritoController extends Controller
      */
     public function destroy(DetalleCarrito $detalleCarrito)
     {
-        //
+        return $detalleCarrito->delete();
     }
 }

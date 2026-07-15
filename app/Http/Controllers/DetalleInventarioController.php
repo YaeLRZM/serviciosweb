@@ -13,7 +13,7 @@ class DetalleInventarioController extends Controller
      */
     public function index()
     {
-        //
+        return Detalle_Inventario::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class DetalleInventarioController extends Controller
      */
     public function store(StoreDetalle_InventarioRequest $request)
     {
-        //
+        $detalleInventario = Detalle_Inventario::create($request->validated());
+        return response()->json(['message' => 'Detalle de inventario creado correctamente', 'detalleInventario' => $detalleInventario], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class DetalleInventarioController extends Controller
      */
     public function show(Detalle_Inventario $detalle_Inventario)
     {
-        //
+        return $detalle_Inventario;
     }
 
     /**
@@ -53,7 +54,8 @@ class DetalleInventarioController extends Controller
      */
     public function update(UpdateDetalle_InventarioRequest $request, Detalle_Inventario $detalle_Inventario)
     {
-        //
+        $detalle_Inventario->update($request->validated());
+        return response()->json(['message' => 'Detalle de inventario actualizado correctamente', 'detalleInventario' => $detalle_Inventario], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class DetalleInventarioController extends Controller
      */
     public function destroy(Detalle_Inventario $detalle_Inventario)
     {
-        //
+        $detalle_Inventario->delete();
+        return response()->json(['message' => 'Detalle de inventario eliminado correctamente'], 200);
     }
 }

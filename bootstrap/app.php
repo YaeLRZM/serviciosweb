@@ -1,11 +1,10 @@
 <?php
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
-
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -30,20 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Toda la API debe responder JSON (aunque no envíen Accept: application/json).
-        // Evita 302 → /login y el 405 en DELETE/PUT/PATCH sin token.
-        $exceptions->shouldRenderJsonWhen(function (Request $request, \Throwable $e) {
-            if ($request->is('api/*')) {
-                return true;
-            }
-
-            return $request->expectsJson();
-        });
-
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
-                    'message' => $e->getMessage() ?: 'Unauthenticated.',
+                    'error' => true,
+                    'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.'
                 ], 401);
             }
         });
