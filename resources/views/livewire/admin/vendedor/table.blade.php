@@ -1,28 +1,36 @@
 <?php
 
+use App\Services\Vendedores\VendedoresDataService;
 use function Livewire\Volt\{state, computed};
 
 state([
     'busqueda' => '',
     'estatus' => 'Todos',
     'page' => 1,
+    'error' => null,
 ]);
 
-$estatuses = computed(fn() => ['Todos', 'Verificado', 'En Revisión', 'Suspendido']);
+$estatuses = computed(fn() => ['Todos', 'Verificado', 'En Revisión', 'Suspendido', 'Rechazado']);
 
 $estatusBadges = computed(fn() => [
     'Verificado'  => ['dot' => 'bg-emerald-500', 'text' => 'bg-emerald-50 text-emerald-600'],
     'En Revisión' => ['dot' => 'bg-amber-500',   'text' => 'bg-amber-50 text-amber-600'],
     'Suspendido'  => ['dot' => 'bg-rose-500',    'text' => 'bg-rose-50 text-rose-600'],
+    'Rechazado'   => ['dot' => 'bg-neutral-400', 'text' => 'bg-neutral-100 text-neutral-600'],
 ]);
 
-// TODO: reemplazar por Vendedor::query()->with('propietario')->...
-$dataset = computed(fn() => collect([
-    ['id' => 1, 'tienda' => 'Arte en Filigrana',   'propietario' => 'Sofia Mendoza', 'imagen' => 'https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=200', 'categoria' => 'Joyería',     'ingreso' => '12 Mar 2023', 'rating' => 4.9, 'resenas' => 124, 'estatus' => 'Verificado'],
-    ['id' => 2, 'tienda' => 'Talabartería Oaxaca', 'propietario' => 'Carlos Vazquez', 'imagen' => 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=200', 'categoria' => 'Cuero',       'ingreso' => '05 Ene 2024', 'rating' => null, 'resenas' => 0,   'estatus' => 'En Revisión'],
-    ['id' => 3, 'tienda' => 'Sabores del Sur',     'propietario' => 'Ricardo Gomez', 'imagen' => 'https://images.unsplash.com/photo-1547592180-85f173990554?w=200', 'categoria' => 'Gastronomía', 'ingreso' => '22 Nov 2022', 'rating' => 4.2, 'resenas' => 312, 'estatus' => 'Suspendido'],
-    ['id' => 4, 'tienda' => 'Bordados Juchitán',   'propietario' => 'Ximena Morales', 'imagen' => 'https://images.unsplash.com/photo-1610030181087-540f5b32c235?w=200', 'categoria' => 'Textiles',   'ingreso' => '15 Sep 2023', 'rating' => 5.0, 'resenas' => 89,  'estatus' => 'Verificado'],
-]));
+$dataset = computed(function () {
+    try {
+        $data = app(VendedoresDataService::class)->all();
+        $this->error = null;
+
+        return collect($data);
+    } catch (\Throwable $e) {
+        $this->error = 'No se pudieron cargar los vendedores. Intenta de nuevo.';
+
+        return collect();
+    }
+});
 
 $filtered = computed(function () {
     $perPage = 10;
@@ -38,12 +46,16 @@ $filtered = computed(function () {
     $total = $items->count();
     $totalPages = max(1, (int) ceil($total / $perPage));
     $page = min(max(1, $this->page), $totalPages);
+    $from = $total === 0 ? 0 : (($page - 1) * $perPage) + 1;
+    $to = min($page * $perPage, $total);
 
     return [
         'items'      => $items->slice(($page - 1) * $perPage, $perPage)->values(),
         'total'      => $total,
         'totalPages' => $totalPages,
         'page'       => $page,
+        'from'       => $from,
+        'to'         => $to,
     ];
 });
 
@@ -52,7 +64,13 @@ $irAPagina = function ($p) {
 };
 ?>
 
-<div class="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden">
+<div class="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden" x-on:vendedor-actualizado.window="$wire.$refresh()">
+
+    @if ($error)
+    <div class="m-5 bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl font-bold">
+        {{ $error }}
+    </div>
+    @endif
 
     {{-- Filtros --}}
     <div class="flex flex-col md:flex-row gap-3 justify-between items-center p-5 border-b border-neutral-100">
@@ -67,13 +85,6 @@ $irAPagina = function ($p) {
                     placeholder="Filtrar por nombre..."
                     class="w-full text-sm rounded-full border-neutral-200 bg-neutral-50 pl-9 pr-3 py-2 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
             </div>
-
-            <button class="flex items-center gap-1.5 px-4 py-2 border border-neutral-200 rounded-full text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-                </svg>
-                Filtros
-            </button>
         </div>
 
         <div class="flex items-center gap-2 w-full md:w-auto">
@@ -95,6 +106,7 @@ $irAPagina = function ($p) {
                     <th class="px-5 py-4 border-b border-neutral-100">Categoría</th>
                     <th class="px-5 py-4 border-b border-neutral-100">Fecha de Ingreso</th>
                     <th class="px-5 py-4 border-b border-neutral-100">Reputación</th>
+                    <th class="px-5 py-4 border-b border-neutral-100">Reportes</th>
                     <th class="px-5 py-4 border-b border-neutral-100">Estado</th>
                     <th class="px-5 py-4 border-b border-neutral-100 text-right">Acciones</th>
                 </tr>
@@ -127,6 +139,18 @@ $irAPagina = function ($p) {
                         @endif
                     </td>
                     <td class="px-5 py-4">
+                        @if (! empty($item['reportado']))
+                        <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-600">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Reportado
+                        </span>
+                        @else
+                        <span class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-neutral-50 text-neutral-500">
+                            Sin reporte
+                        </span>
+                        @endif
+                    </td>
+                    <td class="px-5 py-4">
                         @php $eb = $this->estatusBadges[$item['estatus']] ?? ['dot' => 'bg-neutral-400', 'text' => 'bg-neutral-100 text-neutral-600']; @endphp
                         <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full {{ $eb['text'] }}">
                             <span class="w-1.5 h-1.5 rounded-full {{ $eb['dot'] }}"></span>
@@ -138,40 +162,26 @@ $irAPagina = function ($p) {
                             <button
                                 wire:click="$dispatch('abrirVendedor', { id: {{ $item['id'] }} })"
                                 class="w-8 h-8 rounded-full hover:bg-[#D81B60]/10 flex items-center justify-center text-[#D81B60] transition"
-                                title="Ver tienda">
+                                title="Revisar">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </button>
 
-                            <a href="mailto:" class="w-8 h-8 rounded-full hover:bg-[#D81B60]/10 flex items-center justify-center text-[#D81B60] transition" title="Contactar">
+                            @if (! empty($item['email']))
+                            <a href="mailto:{{ $item['email'] }}" class="w-8 h-8 rounded-full hover:bg-[#D81B60]/10 flex items-center justify-center text-[#D81B60] transition" title="Contactar">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                                 </svg>
                             </a>
-
-                            <x-dropdown align="right" width="44">
-                                <x-slot name="trigger">
-                                    <button class="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-400 transition">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 6a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4z" />
-                                        </svg>
-                                    </button>
-                                </x-slot>
-                                <x-slot name="content">
-                                    <x-dropdown-link href="#">Ver historial</x-dropdown-link>
-                                    <button class="w-full text-start">
-                                        <x-dropdown-link>Suspender tienda</x-dropdown-link>
-                                    </button>
-                                </x-slot>
-                            </x-dropdown>
+                            @endif
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-5 py-10 text-center text-neutral-400 text-sm">
+                    <td colspan="7" class="px-5 py-10 text-center text-neutral-400 text-sm">
                         No hay vendedores que coincidan con el filtro.
                     </td>
                 </tr>
@@ -182,7 +192,9 @@ $irAPagina = function ($p) {
 
     {{-- Paginación --}}
     <div class="bg-neutral-50 px-5 py-4 flex justify-between items-center">
-        <p class="text-xs text-neutral-500">Mostrando 1 a {{ $this->filtered['items']->count() }} de {{ $this->filtered['total'] }} vendedores</p>
+        <p class="text-xs text-neutral-500">
+            Mostrando {{ $this->filtered['from'] }} a {{ $this->filtered['to'] }} de {{ $this->filtered['total'] }} vendedores
+        </p>
         <div class="flex items-center gap-1">
             <button wire:click="irAPagina({{ $this->filtered['page'] - 1 }})" @disabled($this->filtered['page'] <= 1)
                     class="p-2 rounded-full text-neutral-400 hover:bg-white disabled:opacity-30 transition">
@@ -196,14 +208,14 @@ $irAPagina = function ($p) {
                     class="w-8 h-8 rounded-full text-sm font-bold transition {{ $p === $this->filtered['page'] ? 'bg-[#D81B60] text-white' : 'hover:bg-white text-neutral-600' }}">
                     {{ $p }}
                 </button>
-                @endfor
+            @endfor
 
-                <button wire:click="irAPagina({{ $this->filtered['page'] + 1 }})" @disabled($this->filtered['page'] >= $this->filtered['totalPages'])
-                    class="p-2 rounded-full text-neutral-400 hover:bg-white disabled:opacity-30 transition">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
+            <button wire:click="irAPagina({{ $this->filtered['page'] + 1 }})" @disabled($this->filtered['page'] >= $this->filtered['totalPages'])
+                class="p-2 rounded-full text-neutral-400 hover:bg-white disabled:opacity-30 transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
         </div>
     </div>
 </div>

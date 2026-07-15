@@ -1,30 +1,79 @@
 <?php
 
-use function Livewire\Volt\{computed};
+use App\Services\Vendedores\VendedoresDataService;
+use function Livewire\Volt\{state, computed};
 
-$stats = computed(fn() => [
-    'total' => 1284,       // TODO: Vendedor::count()
-    'pendientes' => 42,     // TODO: Vendedor::where('estatus', 'En Revisión')->count()
-    'marcados' => 8,        // TODO: Vendedor::where('estatus', 'Suspendido')->count()
-    'activas' => 1215,      // TODO: Vendedor::where('activo', true)->count()
+state([
+    'error' => null,
+    'modalSolicitudes' => false,
 ]);
 
-// TODO: reemplazar por Vendedor::where('estatus', 'En Revisión')->latest()->take(3)->get()
-$colaVerificacion = computed(fn() => collect([
-    ['id' => 1, 'tienda' => 'Barro Rojo San Marcos', 'propietario' => 'Elena Juarez', 'imagen' => 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=200'],
-    ['id' => 2, 'tienda' => 'Tejidos del Valle',      'propietario' => 'Mateo Ruiz',   'imagen' => 'https://images.unsplash.com/photo-1595408076683-577a0e414ed3?w=200'],
-    ['id' => 3, 'tienda' => 'Taller de Alebrijes',    'propietario' => 'Isabela Cruz', 'imagen' => 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=200'],
-]));
+$stats = computed(function () {
+    try {
+        $stats = app(VendedoresDataService::class)->stats();
+        $this->error = null;
+
+        return $stats;
+    } catch (\Throwable $e) {
+        $this->error = 'No se pudieron cargar las estadísticas de vendedores.';
+
+        return [
+            'total' => 0,
+            'pendientes' => 0,
+            'marcados' => 0,
+            'activas' => 0,
+        ];
+    }
+});
+
+$colaVerificacion = computed(function () {
+    try {
+        return collect(app(VendedoresDataService::class)->solicitudes())
+            ->take(3)
+            ->values();
+    } catch (\Throwable $e) {
+        $this->error = 'No se pudieron cargar las solicitudes pendientes.';
+
+        return collect();
+    }
+});
+
+$todasSolicitudes = computed(function () {
+    try {
+        return collect(app(VendedoresDataService::class)->solicitudes())->values();
+    } catch (\Throwable $e) {
+        return collect();
+    }
+});
+
+$abrirSolicitudes = function () {
+    $this->modalSolicitudes = true;
+};
+
+$cerrarSolicitudes = function () {
+    $this->modalSolicitudes = false;
+};
+
+$revisarSolicitud = function (int $id) {
+    $this->modalSolicitudes = false;
+    $this->dispatch('abrirVendedor', id: $id);
+};
 ?>
 
-<div class="space-y-6">
+<div class="space-y-6" x-on:vendedor-actualizado.window="$wire.$refresh()">
+
+    @if ($error)
+    <div class="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl font-bold shadow-sm">
+        {{ $error }}
+    </div>
+    @endif
 
     {{-- Estadísticas --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <x-admin.stat-mini-card
             label="Vendedores Totales"
             :value="number_format($this->stats['total'])"
-            trend="+12% este mes"
+            trend="Registrados en la plataforma"
             trend-color="text-emerald-500"
             icon-bg="bg-[#D81B60]/10"
             icon-color="text-[#D81B60]"
@@ -49,7 +98,7 @@ $colaVerificacion = computed(fn() => collect([
         <x-admin.stat-mini-card
             label="Vendedores Marcados"
             :value="$this->stats['marcados']"
-            trend="Por disputas de calidad"
+            trend="Suspendidos o con reportes"
             trend-color="text-rose-500"
             icon-bg="bg-rose-100"
             icon-color="text-rose-500"
@@ -74,20 +123,82 @@ $colaVerificacion = computed(fn() => collect([
 
     {{-- Cola de verificación --}}
     <section>
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-4 gap-3">
             <h3 class="font-cormorant text-2xl text-neutral-900">Cola de Verificación</h3>
-            <button class="text-sm font-semibold text-[#D81B60] hover:underline">Ver todas las solicitudes</button>
+            <button
+                type="button"
+                wire:click="abrirSolicitudes"
+                class="text-sm font-semibold text-[#D81B60] hover:underline shrink-0">
+                Ver todas las solicitudes
+            </button>
         </div>
 
+        @if ($this->colaVerificacion->isEmpty())
+        <div class="bg-white rounded-2xl border border-dashed border-neutral-200 px-5 py-8 text-center">
+            <p class="text-sm text-neutral-400">No hay solicitudes pendientes por revisar.</p>
+        </div>
+        @else
         <div class="flex gap-4 overflow-x-auto pb-2">
             @foreach ($this->colaVerificacion as $vendedor)
             <x-admin.vendor-queue-card :vendedor="$vendedor" />
             @endforeach
         </div>
+        @endif
     </section>
 
     {{-- Tabla --}}
     <livewire:admin.vendedor.table />
 
     <livewire:admin.vendedor.form />
+
+    {{-- Modal: todas las solicitudes --}}
+    <x-modal :show="$modalSolicitudes" maxWidth="2xl" title="Solicitudes para ser vendedor" subtitle="Revisa y dictamina cada solicitud pendiente">
+        <x-slot name="closeButton">
+            <button type="button" wire:click="cerrarSolicitudes" class="text-neutral-400 hover:text-neutral-600 transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </x-slot>
+
+        @if ($this->todasSolicitudes->isEmpty())
+        <div class="py-10 text-center">
+            <p class="text-sm text-neutral-400">No hay solicitudes pendientes en este momento.</p>
+        </div>
+        @else
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+            @foreach ($this->todasSolicitudes as $solicitud)
+            <div class="flex items-center gap-3 p-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 hover:bg-neutral-50 transition">
+                <img
+                    src="{{ $solicitud['imagen'] }}"
+                    alt="{{ $solicitud['tienda'] }}"
+                    class="w-14 h-14 rounded-xl object-cover shrink-0 border border-neutral-200" />
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-[#D81B60] truncate">{{ $solicitud['tienda'] }}</h4>
+                    <p class="text-xs text-neutral-400 truncate">Prop: {{ $solicitud['propietario'] }}</p>
+                    <p class="text-[11px] text-neutral-400 mt-0.5 truncate">{{ $solicitud['categoria'] }} · {{ $solicitud['ingreso'] }}</p>
+                    @if (! empty($solicitud['reportado']))
+                    <span class="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-rose-600">Reportado</span>
+                    @endif
+                </div>
+                <button
+                    type="button"
+                    wire:click="revisarSolicitud({{ (int) $solicitud['id'] }})"
+                    class="shrink-0 bg-[#D81B60] text-white text-xs font-semibold px-3.5 py-2 rounded-full hover:bg-[#b0124a] transition">
+                    Revisar
+                </button>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+        <div class="flex justify-end pt-4 mt-2 border-t border-neutral-100">
+            <button
+                type="button"
+                wire:click="cerrarSolicitudes"
+                class="text-xs font-bold text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition">
+                Cerrar
+            </button>
+        </div>
+    </x-modal>
 </div>
