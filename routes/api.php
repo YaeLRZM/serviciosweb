@@ -53,6 +53,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('usuarios', UserController::class);
     Route::apiResource('inventarios', InventarioController::class);
     Route::apiResource('detalle-inventarios', DetalleInventarioController::class);
+    Route::apiResource('ventas', VentaController::class);
     
     /*
     **********************************
@@ -65,11 +66,11 @@ Route::middleware('auth:api')->group(function () {
     - Articulos: index, show
     - Tiendas: index, show
     - Categorias: index, show
+    - Ventas: index, show
     */
     Route::apiResource('resenas', ResenaController::class);
     Route::apiResource('carritos', CarritoController::class);
     Route::apiResource('detalle-carritos', DetalleCarritoController::class);
-    Route::apiResource('ventas', VentaController::class);
     Route::apiResource('direcciones', DireccionController::class);
     Route::apiResource('envios', EnvioController::class);
     Route::apiResource('detalle-ventas', DetalleVentaController::class);
