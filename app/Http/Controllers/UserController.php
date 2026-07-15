@@ -13,7 +13,23 @@ class UserController extends Controller
 {
     public function index(IndexUserRequest $request)
     {
-        return User::all();
+        $query = User::query()->with('roles');
+
+        if ($request->filled('rol')) {
+            $query->whereHas('roles', fn ($q) => $q->where('name', $request->string('rol')));
+        }
+
+        if ($request->filled('estatus')) {
+            $query->where('estatus', $request->string('estatus'));
+        }
+
+        if ($request->filled('busqueda')) {
+            $busqueda = $request->string('busqueda');
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$busqueda}%")
+                ->orWhere('email', 'like', "%{$busqueda}%"));
+        }
+
+        return $query->latest()->get();
     }
 
     public function store(StoreUserRequest $request)
@@ -23,14 +39,27 @@ class UserController extends Controller
 
     public function show(ShowUserRequest $request, User $usuario)
     {
-        return $usuario;
+        return $usuario->load('roles');
     }
 
     public function update(UpdateUserRequest $request, User $usuario)
     {
-        $usuario->update($request->validated());
+        $data = $request->validated();
 
-        return $usuario;
+        $rol = $data['rol'] ?? null;
+        unset($data['rol']);
+
+        if (empty($data['password'])) {
+            unset($data['password']);
+        }
+
+        $usuario->update($data);
+
+        if ($rol) {
+            $usuario->syncRoles([$rol]);
+        }
+
+        return $usuario->load('roles');
     }
 
     public function destroy(DestroyUserRequest $request, User $usuario)

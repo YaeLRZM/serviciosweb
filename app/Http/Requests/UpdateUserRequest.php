@@ -32,7 +32,9 @@ class UpdateUserRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($usuario),
             ],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['nullable', 'string', 'min:8'],
+            'estatus' => ['nullable', 'string', Rule::in(['activo', 'suspendido', 'marcado'])],
+            'rol' => ['nullable', 'string', Rule::in(['admin', 'user', 'guest'])],
         ];
     }
 }

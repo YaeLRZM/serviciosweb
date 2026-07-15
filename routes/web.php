@@ -20,7 +20,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::view('/publicaciones', 'admin.publicacion.index')->name('publicacion.index');
 
         Route::view('/categorias', 'admin.categoria.index')->name('categorias.index');
-        Route::view('/categorias/{categoriaId}/edit', 'admin.categoria.edit')->name('categorias.edit');
 
         Route::view('/artesanos', 'admin.artesano.index')->name('artesanos.index');
 
