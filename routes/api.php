@@ -61,6 +61,7 @@ Route::middleware('auth:api')->group(function () {
     */
     
     /*
+    Aqui tambien se utilizan
     - Articulos: index, show
     - Tiendas: index, show
     - Categorias: index, show
@@ -77,7 +78,7 @@ Route::middleware('auth:api')->group(function () {
     *Otras Rutas (No prioritarias)*
     *******************************
     */
-    
+
     Route::apiResource('formas-pago', FormaPagoController::class);
     Route::apiResource('estados', EstadoController::class);
     Route::apiResource('vendedores', VendedorController::class);
