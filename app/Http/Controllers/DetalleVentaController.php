@@ -13,7 +13,7 @@ class DetalleVentaController extends Controller
      */
     public function index()
     {
-        //
+        return Detalle_Venta::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class DetalleVentaController extends Controller
      */
     public function store(StoreDetalle_VentaRequest $request)
     {
-        //
+        $venta = Detalle_Venta::create($request->validated());
+        return response()->json(['message' => 'Detalle de venta creado correctamente', 'detalleVenta' => $venta], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class DetalleVentaController extends Controller
      */
     public function show(Detalle_Venta $detalle_Venta)
     {
-        //
+        return response()->json(['detalleVenta' => $detalle_Venta], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class DetalleVentaController extends Controller
      */
     public function update(UpdateDetalle_VentaRequest $request, Detalle_Venta $detalle_Venta)
     {
-        //
+        $detalle_Venta->update($request->validated());
+        return response()->json(['message' => 'Detalle de venta actualizado correctamente', 'detalleVenta' => $detalle_Venta], 200);
     }
 
     /**
@@ -61,6 +63,6 @@ class DetalleVentaController extends Controller
      */
     public function destroy(Detalle_Venta $detalle_Venta)
     {
-        //
+        return response()->json(['message' => 'Eliminación de detalle de venta no permitida'], 403);
     }
 }

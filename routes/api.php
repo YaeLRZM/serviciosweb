@@ -71,6 +71,8 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('detalle-carritos', DetalleCarritoController::class);
     Route::apiResource('ventas', VentaController::class);
     Route::apiResource('direcciones', DireccionController::class);
+    Route::apiResource('envios', EnvioController::class);
+    Route::apiResource('detalle-ventas', DetalleVentaController::class);
 
 
     /*
@@ -82,8 +84,6 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('formas-pago', FormaPagoController::class);
     Route::apiResource('estados', EstadoController::class);
     Route::apiResource('vendedores', VendedorController::class);
-    Route::apiResource('detalle-ventas', DetalleVentaController::class);
-    Route::apiResource('envios', EnvioController::class);
     Route::apiResource('campanas', CampanaController::class);
     Route::apiResource('detalle-campanas', DetalleCampanaController::class);
     Route::apiResource('cupones', CuponController::class);
