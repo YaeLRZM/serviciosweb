@@ -14,7 +14,11 @@
         "livewire/livewire": "^3.6.4",
         "livewire/volt": "^1.7.0",
         "spatie/laravel-permission": "^8.3",
-        "tymon/jwt-auth": "^2.1"
+        "tymon/jwt-auth": "^2.1",
+        "laravel/sanctum": "^4.0",
+        "laravel/tinker": "^2.10.1",
+        "spatie/laravel-permission": "^8.3",
+        "tymon/jwt-auth": "^2.3"
     },
     "require-dev": {
         "darkaonline/l5-swagger": "^11.1",

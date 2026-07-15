@@ -18,10 +18,15 @@ class ArticuloFactory extends Factory
     public function definition(): array
     {
         return [
+            'categoria_id' => \App\Models\Categoria::query()->inRandomOrder()->value('id') ?? \App\Models\Categoria::factory(),
+            'artesano_id' => \App\Models\Artesano::query()->inRandomOrder()->value('id') ?? \App\Models\Artesano::factory(),
+            'tienda_id' => \App\Models\Tienda::query()->inRandomOrder()->value('id') ?? \App\Models\Tienda::factory(),
             'nombre' => $this->faker->word(),
-            'descripcion' => $this->faker->sentence(),
-            'precio' => $this->faker->randomFloat(2, 10, 100),
-            'stock' => $this->faker->numberBetween(0, 100),
+            'talla' => $this->faker->word(),
+            'color' => $this->faker->word(),
+            'bordado' => $this->faker->word(),
+            'tela' => $this->faker->word(),
+            'region' => $this->faker->word(),
         ];
     }
 }

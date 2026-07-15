@@ -7,21 +7,13 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
-
-    /**
-     * Guard de Spatie para este modelo.
-     *
-     * Los roles/permisos en BD usan guard_name=web, mientras la API autentica
-     * con JWT (auth:api). Fijar web evita que can() busque permisos en guard api.
-     */
-    protected string $guard_name = 'web';
+    use HasRoles, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -29,7 +21,9 @@ class User extends Authenticatable implements JWTSubject
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'nombre',
+        'apellido_paterno',
+        'apellido_materno',
         'email',
         'password',
     ];
@@ -57,13 +51,46 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
+    public function carrito()
+    {
+        return $this->hasOne(Carrito::class);
+    }
+
+    public function resenas()
+    {
+        return $this->hasMany(Resena::class);
+    }
+    public function direcciones()
+    {
+        return $this->hasMany(Direccion::class);
+    }
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class);
+    }
+    public function detalle_inventarios()
+    {
+        return $this->hasMany(Detalle_Inventario::class);
+    }
+    public function cuponCanjeados()
+    {
+        return $this->hasMany(CuponCanjeado::class);
+    }
+    
+    /**
+     * Obtiene el identificador que se almacenará en el "subject" (sub) del JWT.
+     */
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
 
-    public function getJWTCustomClaims(): array
+    /**
+     * Devuelve un arreglo de claims personalizados para añadir al JWT.
+     */
+    public function getJWTCustomClaims()
     {
         return [];
     }
+
 }
