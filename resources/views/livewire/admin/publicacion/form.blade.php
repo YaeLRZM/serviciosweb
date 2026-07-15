@@ -82,20 +82,20 @@ $aplicarDictamen = function (string $estado) {
             </div>
 
             <div class="p-6 space-y-4">
-                <div class="flex items-center justify-between">
-                    <p class="text-2xl font-extrabold text-neutral-900">${{ number_format($publicacion['precio'], 2) }}</p>
-                    <div class="flex items-center gap-0.5">
-                        @for ($i = 1; $i <= 5; $i++)
-                            <svg class="w-4 h-4 {{ $i <= $publicacion['puntuacion'] ? 'text-amber-400' : 'text-neutral-200' }}" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.813 9.384c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.285-3.957z" />
-                            </svg>
-                            @endfor
-                    </div>
+                <div class="flex items-center justify-center gap-1">
+                    @php $promedio = round($publicacion['calificacion_promedio'] ?? 0, 1); @endphp
+                    @for ($i = 1; $i <= 5; $i++)
+                        <svg class="w-5 h-5 {{ $i <= round($promedio) ? 'text-amber-400' : 'text-neutral-200' }}" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.813 9.384c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.285-3.957z" />
+                        </svg>
+                        @endfor
+                        <span class="text-xs font-bold text-neutral-500 ml-2">{{ $promedio > 0 ? number_format($promedio, 1) : 'Sin reseñas' }}</span>
                 </div>
 
                 <div class="text-xs text-neutral-400 flex items-center gap-2 flex-wrap">
                     <span class="bg-neutral-100 px-2.5 py-1 rounded-full font-medium text-neutral-600">{{ $publicacion['categoria'] }}</span>
                     <span>Artesano: {{ $publicacion['artesano'] }}</span>
+                    <span>Tienda: {{ $publicacion['tienda'] }}</span>
                 </div>
 
                 <div>
