@@ -12,8 +12,6 @@ use App\Models\Tienda;
 use App\Models\FormaPago;
 use App\Models\Estado;
 use App\Models\Artesano;
-use App\Models\Articulo;
-use App\Models\Resena;
 use App\Models\Inventario;
 use App\Models\Direccion;
 use App\Models\Venta;
@@ -30,6 +28,7 @@ use App\Models\ImagenArticulo;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -70,6 +69,16 @@ class DatabaseSeeder extends Seeder
             'apellido_paterno' => 'User',
             'email' => 'test@example.com',
         ]);
-        
+
+
+        $admin = User::factory()->create([
+            'nombre' => 'Admin',
+            'apellido_paterno' => 'Sistema',
+            'apellido_materno' => 'Principal',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+        ]);
+
+        $admin->assignRole('admin');
     }
 }
