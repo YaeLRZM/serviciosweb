@@ -1,0 +1,333 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Servicios Web - Artesanías",
+        "description": "API REST para el catálogo de artículos artesanales, tiendas, categorías y artesanos.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Servidor local"
+        }
+    ],
+    "paths": {
+        "/api/articulos": {
+            "get": {
+                "tags": [
+                    "Articulos"
+                ],
+                "summary": "Listar artículos (público, sin autenticación)",
+                "description": "Devuelve todos los artículos con su categoría, artesano, tienda e imágenes. Acepta filtros opcionales por query string; si no se envía ninguno se devuelven todos.",
+                "operationId": "021362b92b70d8c24f566bb0db7178d5",
+                "parameters": [
+                    {
+                        "name": "categoria",
+                        "in": "query",
+                        "description": "ID de la categoría",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "artesano",
+                        "in": "query",
+                        "description": "ID del artesano",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "tienda",
+                        "in": "query",
+                        "description": "ID de la tienda",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "color",
+                        "in": "query",
+                        "description": "Color exacto",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "bordado",
+                        "in": "query",
+                        "description": "Tipo de bordado",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tela",
+                        "in": "query",
+                        "description": "Tipo de tela",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "region",
+                        "in": "query",
+                        "description": "Región de origen",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Listado de artículos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Articulo"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/articulos/{id}": {
+            "get": {
+                "tags": [
+                    "Articulos"
+                ],
+                "summary": "Ver un artículo (público, sin autenticación)",
+                "operationId": "53ebb83e59d006abd1bd488176d98899",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID del artículo",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artículo encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Articulo"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Artículo no encontrado"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Iniciar sesión y obtener un token JWT",
+                "description": "Generar un JWT a partir de credenciales.",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "test@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Autenticación correcta",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "access_token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "example": "bearer"
+                                        },
+                                        "expires_in": {
+                                            "type": "integer",
+                                            "example": 3600
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales inválidas"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Articulo": {
+                "title": "Articulo",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Huipil bordado de Oaxaca"
+                    },
+                    "talla": {
+                        "type": "string",
+                        "example": "M"
+                    },
+                    "color": {
+                        "type": "string",
+                        "example": "Rojo"
+                    },
+                    "bordado": {
+                        "type": "string",
+                        "example": "Punto de cruz"
+                    },
+                    "tela": {
+                        "type": "string",
+                        "example": "Manta"
+                    },
+                    "region": {
+                        "type": "string",
+                        "example": "Oaxaca"
+                    },
+                    "categoria": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "nombre": {
+                                "type": "string",
+                                "example": "Textiles"
+                            },
+                            "descripcion": {
+                                "type": "string",
+                                "example": "Prendas tejidas a mano"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "artesano": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "nombre": {
+                                "type": "string",
+                                "example": "María López"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "tienda": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "nombre": {
+                                "type": "string",
+                                "example": "Artesanías del Sur"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "imagenes": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "example": "https://images.unsplash.com/photo-123?w=800"
+                                },
+                                "es_principal": {
+                                    "type": "boolean",
+                                    "example": true
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Articulos",
+            "description": "Articulos"
+        },
+        {
+            "name": "Auth",
+            "description": "Auth"
+        }
+    ]
+}

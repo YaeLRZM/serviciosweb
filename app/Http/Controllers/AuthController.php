@@ -4,12 +4,44 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
     /**
      * Generar un JWT a partir de credenciales.
      */
+    #[OA\Post(
+        path: '/api/login',
+        summary: 'Iniciar sesión y obtener un token JWT',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'password'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'test@example.com'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'password'),
+                ],
+                type: 'object'
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Autenticación correcta',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'access_token', type: 'string'),
+                        new OA\Property(property: 'token_type', type: 'string', example: 'bearer'),
+                        new OA\Property(property: 'expires_in', type: 'integer', example: 3600),
+                    ],
+                    type: 'object'
+                )
+            ),
+            new OA\Response(response: 401, description: 'Credenciales inválidas'),
+        ]
+    )]
     public function login(Request $request)
     {
         $request->validate([
