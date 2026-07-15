@@ -10,7 +10,14 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 
 Route::post('login', [AuthController::class, 'login']);
-
+Route::middleware('auth:api')->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::get('me', [AuthController::class, 'me']);
+    
+    // Aquí puedes proteger también tus rutas de recursos:
+    // Route::apiResource('productos', ProductoController::class);
+});
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
