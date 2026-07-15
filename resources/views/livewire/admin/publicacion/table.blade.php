@@ -123,7 +123,7 @@ $irAPagina = function ($p) {
                     <th class="px-5 py-3">Producto</th>
                     <th class="px-5 py-3">Categoría</th>
                     <th class="px-5 py-3">Artesano</th>
-                    <th class="px-5 py-3">Enviado</th>
+                    <th class="px-5 py-3">Tienda</th>
                     <th class="px-5 py-3">Estado</th>
                     <th class="px-5 py-3 text-right">Acciones</th>
                 </tr>
@@ -148,7 +148,7 @@ $irAPagina = function ($p) {
                         </span>
                     </td>
                     <td class="px-5 py-3 text-neutral-600">{{ $item['artesano'] }}</td>
-                    <td class="px-5 py-3 text-neutral-500">{{ $item['fecha'] }}</td>
+                    <td class="px-5 py-3 text-neutral-500">{{ $item['tienda'] }}</td>
                     <td class="px-5 py-3">
                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $this->statusBadges[$item['estado']] ?? 'bg-neutral-100 text-neutral-600' }}">
                             {{ $item['estado'] }}

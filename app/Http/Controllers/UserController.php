@@ -13,7 +13,23 @@ class UserController extends Controller
      */
     public function index()
     {
-        return User::all();
+        $query = User::query()->with('roles');
+
+        if ($request->filled('rol')) {
+            $query->whereHas('roles', fn ($q) => $q->where('name', $request->string('rol')));
+        }
+
+        if ($request->filled('estatus')) {
+            $query->where('estatus', $request->string('estatus'));
+        }
+
+        if ($request->filled('busqueda')) {
+            $busqueda = $request->string('busqueda');
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$busqueda}%")
+                ->orWhere('email', 'like', "%{$busqueda}%"));
+        }
+
+        return $query->latest()->get();
     }
 
     /**

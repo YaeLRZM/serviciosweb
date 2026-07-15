@@ -8,7 +8,7 @@ new class extends Component {
 
 @props(['label', 'value', 'trend' => null, 'trendColor' => 'text-neutral-400', 'iconBg' => 'bg-neutral-100', 'iconColor' => 'text-neutral-500', 'borderColor' => null])
 
-<div class="bg-white rounded-2xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between {{ $borderColor ? 'border-l-4 ' . $borderColor : '' }}">
+<div class="bg-white rounded-2xl shadow-sm p-5 flex items-start justify-between {{ $borderColor ? 'border border-l-4 ' . $borderColor : 'border border-neutral-100' }}">
     <div>
         <div class="text-xs font-medium text-neutral-400 uppercase tracking-wide">{{ $label }}</div>
         <div class="text-3xl font-bold text-neutral-900 mt-2">{{ $value }}</div>

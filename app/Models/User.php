@@ -26,6 +26,7 @@ class User extends Authenticatable implements JWTSubject
         'apellido_materno',
         'email',
         'password',
+        'estatus',
     ];
 
     /**
@@ -37,6 +38,18 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'remember_token',
     ];
+
+    /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'rol',
+    ];
+
+    public function getRolAttribute(): ?string
+    {
+        return $this->getRoleNames()->first();
+    }
 
     /**
      * Get the attributes that should be cast.
