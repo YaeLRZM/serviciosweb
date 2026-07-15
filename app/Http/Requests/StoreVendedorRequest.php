@@ -12,7 +12,7 @@ class StoreVendedorRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,12 @@ class StoreVendedorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'tienda_id' => ['required', 'exists:tiendas,id'],
+            'user_id' => ['required', 'exists:users,id'],
+            'codigo_ine' => ['required', 'string', 'max:13', 'unique:vendedors,codigo_ine'],
+            'foto_frontal_ine_link' => ['required', 'string', 'max:100'],
+            'foto_trasera_ine_link' => ['required', 'string', 'max:100'],
+            'estatus' => ['required', 'string', 'max:100'],
         ];
     }
 }
