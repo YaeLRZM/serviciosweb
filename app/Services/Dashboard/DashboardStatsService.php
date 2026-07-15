@@ -2,11 +2,14 @@
 
 namespace App\Services\Dashboard;
 
+use App\Models\Articulo;
+use App\Models\Compra;
 use App\Services\Api\ArticuloApiService;
 use App\Services\Api\CompraApiService;
 use App\Services\Api\UsuarioApiService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardStatsService
 {
@@ -47,6 +50,62 @@ class DashboardStatsService
     public function top20ProductosVendidos(): array
     {
         return $this->calcularTopProductos(20);
+    }
+
+    /**
+     * Top productos desde BD local (sin HTTP / sin ApiClient).
+     * Evita self-request a artisan serve en el dashboard admin.
+     */
+    public function productosPopularesDesdeBd(int $limite = 3): array
+    {
+        return $this->topProductosVendidosDesdeBd($limite);
+    }
+
+    /**
+     * Top N productos vendidos agregando compras en SQL (sin HTTP).
+     * Misma forma de array que calcularTopProductos() (ruta API).
+     *
+     * @return array<int, array{id:int,nombre:string,region:string,artesano:string,precio_unitario:float,cantidad_vendida:int,total_vendido:float}>
+     */
+    public function topProductosVendidosDesdeBd(int $limite = 20): array
+    {
+        $limite = max(1, $limite);
+
+        // 1 query de agregación + 1 query de nombres (sin N+1).
+        $filas = Compra::query()
+            ->select([
+                'articulo_id',
+                DB::raw('SUM(cantidad) as cantidad_vendida'),
+                DB::raw('SUM(cantidad * precio_unitario) as total_vendido'),
+                DB::raw('AVG(precio_unitario) as precio_unitario'),
+            ])
+            ->groupBy('articulo_id')
+            ->orderByDesc('cantidad_vendida')
+            ->limit($limite)
+            ->get();
+
+        if ($filas->isEmpty()) {
+            return [];
+        }
+
+        $nombres = Articulo::query()
+            ->whereIn('id', $filas->pluck('articulo_id'))
+            ->pluck('nombre', 'id');
+
+        return $filas->map(function ($fila) use ($nombres) {
+            $articuloId = (int) $fila->articulo_id;
+
+            return [
+                'id' => $articuloId,
+                'nombre' => (string) ($nombres[$articuloId] ?? 'Producto eliminado'),
+                // Misma convención que la ruta HTTP: región/artesano aún no existen en schema.
+                'region' => $this->regionMock($articuloId),
+                'artesano' => $this->artesanoMock($articuloId),
+                'precio_unitario' => (float) $fila->precio_unitario,
+                'cantidad_vendida' => (int) $fila->cantidad_vendida,
+                'total_vendido' => (float) $fila->total_vendido,
+            ];
+        })->values()->all();
     }
 
     public function ventasPorRegion(string $categoria): array
