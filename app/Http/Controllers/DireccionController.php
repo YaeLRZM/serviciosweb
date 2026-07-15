@@ -13,7 +13,7 @@ class DireccionController extends Controller
      */
     public function index()
     {
-        //
+        return Direccion::all();
     }
 
     /**
@@ -29,7 +29,7 @@ class DireccionController extends Controller
      */
     public function store(StoreDireccionRequest $request)
     {
-        //
+        return Direccion::create($request->validated());
     }
 
     /**
@@ -37,7 +37,7 @@ class DireccionController extends Controller
      */
     public function show(Direccion $direccion)
     {
-        //
+        return $direccion;
     }
 
     /**
@@ -53,7 +53,7 @@ class DireccionController extends Controller
      */
     public function update(UpdateDireccionRequest $request, Direccion $direccion)
     {
-        //
+        return $direccion->update($request->validated());
     }
 
     /**
@@ -61,6 +61,6 @@ class DireccionController extends Controller
      */
     public function destroy(Direccion $direccion)
     {
-        //
+        return $direccion->delete();
     }
 }

@@ -13,7 +13,7 @@ class VentaController extends Controller
      */
     public function index()
     {
-        //
+        return Venta::all();
     }
 
     /**
@@ -29,7 +29,7 @@ class VentaController extends Controller
      */
     public function store(StoreVentaRequest $request)
     {
-        //
+        return Venta::create($request->all());
     }
 
     /**
@@ -37,7 +37,7 @@ class VentaController extends Controller
      */
     public function show(Venta $venta)
     {
-        //
+        return $venta;
     }
 
     /**
@@ -53,7 +53,7 @@ class VentaController extends Controller
      */
     public function update(UpdateVentaRequest $request, Venta $venta)
     {
-        //
+        return $venta->update($request->all());
     }
 
     /**
@@ -61,6 +61,6 @@ class VentaController extends Controller
      */
     public function destroy(Venta $venta)
     {
-        //
+        return $venta->delete();
     }
 }

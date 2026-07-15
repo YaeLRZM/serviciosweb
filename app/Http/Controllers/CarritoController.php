@@ -13,7 +13,7 @@ class CarritoController extends Controller
      */
     public function index()
     {
-        //
+        return Carrito::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class CarritoController extends Controller
      */
     public function store(StoreCarritoRequest $request)
     {
-        //
+        $carrito = Carrito::create($request->validated());
+        return response()->json(['message' => 'Carrito creado correctamente', 'carrito' => $carrito], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class CarritoController extends Controller
      */
     public function show(Carrito $carrito)
     {
-        //
+        return response()->json(['carrito' => $carrito], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class CarritoController extends Controller
      */
     public function update(UpdateCarritoRequest $request, Carrito $carrito)
     {
-        //
+        $carrito->update($request->validated());
+        return response()->json(['message' => 'Carrito actualizado correctamente', 'carrito' => $carrito], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class CarritoController extends Controller
      */
     public function destroy(Carrito $carrito)
     {
-        //
+        $carrito->delete();
+        return response()->json(['message' => 'Carrito eliminado correctamente'], 200);
     }
 }

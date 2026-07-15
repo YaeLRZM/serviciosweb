@@ -28,36 +28,67 @@ use App\Http\Controllers\VentaController;
 
 Route::post('login', [AuthController::class, 'login']);
 
-Route::middleware('auth:api')->group(function () {
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::post('refresh', [AuthController::class, 'refresh']);
-    Route::get('me', [AuthController::class, 'me']);
-});
+// Todos pueden acceder a estas rutas sin autenticación, por lo que se pueden usar para obtener información pública de los recursos.
 Route::apiResource('articulos', ArticuloController::class)->only(['index', 'show']);
 Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
 Route::apiResource('artesanos', ArtesanoController::class)->only(['index', 'show']);
 Route::apiResource('tiendas', TiendaController::class)->only(['index', 'show']);
 
-Route::apiResource('articulos', ArticuloController::class)->except(['index', 'show']);
-Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
-Route::apiResource('artesanos', ArtesanoController::class)->except(['index', 'show']);
-Route::apiResource('tiendas', TiendaController::class)->except(['index', 'show']);
 
-Route::apiResource('formas-pago', FormaPagoController::class);
-Route::apiResource('estados', EstadoController::class);
-Route::apiResource('usuarios', UserController::class);
-Route::apiResource('vendedores', VendedorController::class);
-Route::apiResource('resenas', ResenaController::class);
-Route::apiResource('inventarios', InventarioController::class);
-Route::apiResource('detalle-inventarios', DetalleInventarioController::class);
-Route::apiResource('direcciones', DireccionController::class);
-Route::apiResource('carritos', CarritoController::class);
-Route::apiResource('detalle-carritos', DetalleCarritoController::class);
-Route::apiResource('ventas', VentaController::class);
-Route::apiResource('detalle-ventas', DetalleVentaController::class);
-Route::apiResource('envios', EnvioController::class);
-Route::apiResource('campanas', CampanaController::class);
-Route::apiResource('detalle-campanas', DetalleCampanaController::class);
-Route::apiResource('cupones', CuponController::class);
-Route::apiResource('cupones-canjeados', CuponCanjeadoController::class);
-Route::apiResource('imagen-articulos', ImagenArticuloController::class);
+Route::middleware('auth:api')->group(function () {
+    // Rutas protegidas que requieren autenticación
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::get('me', [AuthController::class, 'me']);
+    
+    /*
+    *****************************************    
+    *Rutas prioritarias para administradores* 
+    *****************************************    
+    */
+    Route::apiResource('articulos', ArticuloController::class)->except(['index', 'show']);
+    Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
+    Route::apiResource('artesanos', ArtesanoController::class)->except(['index', 'show']);
+    Route::apiResource('tiendas', TiendaController::class)->except(['index', 'show']);
+    Route::apiResource('usuarios', UserController::class);
+    Route::apiResource('inventarios', InventarioController::class);
+    Route::apiResource('detalle-inventarios', DetalleInventarioController::class);
+    
+    /*
+    **********************************
+    *Rutas prioritarias para clientes*
+    **********************************
+    */
+    
+    /*
+    - Articulos: index, show
+    - Tiendas: index, show
+    - Categorias: index, show
+    */
+    Route::apiResource('resenas', ResenaController::class);
+    Route::apiResource('carritos', CarritoController::class);
+    Route::apiResource('detalle-carritos', DetalleCarritoController::class);
+    Route::apiResource('ventas', VentaController::class);
+    Route::apiResource('direcciones', DireccionController::class);
+
+
+    /*
+    *******************************  
+    *Otras Rutas (No prioritarias)*
+    *******************************
+    */
+    
+    Route::apiResource('formas-pago', FormaPagoController::class);
+    Route::apiResource('estados', EstadoController::class);
+    Route::apiResource('vendedores', VendedorController::class);
+    Route::apiResource('detalle-ventas', DetalleVentaController::class);
+    Route::apiResource('envios', EnvioController::class);
+    Route::apiResource('campanas', CampanaController::class);
+    Route::apiResource('detalle-campanas', DetalleCampanaController::class);
+    Route::apiResource('cupones', CuponController::class);
+    Route::apiResource('cupones-canjeados', CuponCanjeadoController::class);
+    Route::apiResource('imagen-articulos', ImagenArticuloController::class);
+
+
+
+});

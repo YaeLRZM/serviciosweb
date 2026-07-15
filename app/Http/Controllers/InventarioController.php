@@ -13,7 +13,7 @@ class InventarioController extends Controller
      */
     public function index()
     {
-        //
+        return Inventario::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class InventarioController extends Controller
      */
     public function store(StoreInventarioRequest $request)
     {
-        //
+        $inventario = Inventario::create($request->all());
+        return response()->json(['message' => 'Inventario creado correctamente', 'inventario' => $inventario], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class InventarioController extends Controller
      */
     public function show(Inventario $inventario)
     {
-        //
+        return $inventario;
     }
 
     /**
@@ -53,7 +54,8 @@ class InventarioController extends Controller
      */
     public function update(UpdateInventarioRequest $request, Inventario $inventario)
     {
-        //
+        $inventario->update($request->all());
+        return response()->json(['message' => 'Inventario actualizado correctamente', 'inventario' => $inventario], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class InventarioController extends Controller
      */
     public function destroy(Inventario $inventario)
     {
-        //
+        $inventario->delete();
+        return response()->json(['message' => 'Inventario eliminado correctamente'], 200);
     }
 }
