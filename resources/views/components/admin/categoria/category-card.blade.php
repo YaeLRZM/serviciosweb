@@ -13,16 +13,24 @@ $visible = $categoria['visible'];
 
 <div class="bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden flex flex-col">
 
-    <div class="relative h-36">
+    <div class="relative h-36 bg-neutral-100">
+        @if (! empty($categoria['imagen']))
         <img
             src="{{ $categoria['imagen'] }}"
             alt="{{ $categoria['nombre'] }}"
             class="w-full h-full object-cover {{ $visible ? '' : 'grayscale opacity-60' }}" />
+        @else
+        <div class="w-full h-full flex items-center justify-center text-neutral-300">
+            <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 4.5h18M3.75 4.5v15a.75.75 0 00.75.75h15a.75.75 0 00.75-.75v-15" />
+            </svg>
+        </div>
+        @endif
 
         <span class="absolute top-3 right-3 text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1
             {{ $visible ? 'bg-white/90 text-emerald-600' : 'bg-white/90 text-neutral-500' }}">
             <span class="w-1.5 h-1.5 rounded-full {{ $visible ? 'bg-emerald-500' : 'bg-neutral-400' }}"></span>
-            {{ $visible ? 'Visible' : 'Hidden' }}
+            {{ $visible ? 'Visible' : 'Oculta' }}
         </span>
 
         <div class="absolute bottom-3 left-4">
@@ -31,35 +39,30 @@ $visible = $categoria['visible'];
 
         @unless ($visible)
         <button
-            wire:click="restaurar({{ $categoria['id'] }})"
+            wire:click="alternarVisibilidad({{ $categoria['id'] }})"
             class="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-sm font-semibold opacity-0 hover:opacity-100 transition">
-            Restore to Catalog
+            Restaurar al catálogo
         </button>
         @endunless
     </div>
 
     <div class="p-4 flex-1 flex flex-col">
-        <div class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide">Inventory</div>
-        <div class="flex items-center justify-between mt-1">
-            <span class="text-sm font-medium text-neutral-700">{{ $categoria['productos'] }} Products</span>
-
-            <div class="flex items-center -space-x-1.5">
-                <span class="w-5 h-5 rounded-full bg-[#D81B60]/20 border-2 border-white"></span>
-                <span class="w-5 h-5 rounded-full bg-neutral-200 border-2 border-white"></span>
-                <span class="text-[11px] text-neutral-400 ml-2">+{{ $categoria['artesanos_extra'] }}</span>
-            </div>
-        </div>
+        @if (! empty($categoria['descripcion']))
+        <p class="text-xs text-neutral-500 line-clamp-2">{{ $categoria['descripcion'] }}</p>
+        @else
+        <p class="text-xs text-neutral-300 italic">Sin descripción</p>
+        @endif
 
         <div class="flex items-center gap-2 mt-4">
 
-            <a href="{{ route('admin.categorias.edit', $categoria['id']) }}"
-                wire:navigate
+            <button
+                wire:click="$dispatch('abrirCategoria', { id: {{ $categoria['id'] }} })"
                 class="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-full py-2 transition">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                 </svg>
-                Edit
-            </a>
+                Editar
+            </button>
 
             <button
                 wire:click="alternarVisibilidad({{ $categoria['id'] }})"
