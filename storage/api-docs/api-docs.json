@@ -12,6 +12,64 @@
         }
     ],
     "paths": {
+        "/api/artesanos": {
+            "get": {
+                "tags": [
+                    "Artesanos"
+                ],
+                "summary": "Listar artesanos (público)",
+                "operationId": "079e10370d2bf3552563f9c8dee8b503",
+                "responses": {
+                    "200": {
+                        "description": "Listado de artesanos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Artesano"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/artesanos/{id}": {
+            "get": {
+                "tags": [
+                    "Artesanos"
+                ],
+                "summary": "Ver un artesano (público)",
+                "operationId": "d631149ad3a4a08139f7f972c0f191d1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artesano encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Artesano"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No encontrado"
+                    }
+                }
+            }
+        },
         "/api/articulos": {
             "get": {
                 "tags": [
@@ -210,10 +268,140 @@
                     }
                 }
             }
+        },
+        "/api/categorias": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Listar categorías (público)",
+                "operationId": "66bfb3e0bf7747700be142ec5329dfae",
+                "responses": {
+                    "200": {
+                        "description": "Listado de categorías",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Categoria"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/categorias/{id}": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Ver una categoría (público)",
+                "operationId": "af067e125b5f9a1b1306d9e5c2a5867e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoría encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Categoria"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No encontrada"
+                    }
+                }
+            }
+        },
+        "/api/tiendas": {
+            "get": {
+                "tags": [
+                    "Tiendas"
+                ],
+                "summary": "Listar tiendas (público)",
+                "operationId": "292ab72a5d7219e0d50ed2584d2bae98",
+                "responses": {
+                    "200": {
+                        "description": "Listado de tiendas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Tienda"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/tiendas/{id}": {
+            "get": {
+                "tags": [
+                    "Tiendas"
+                ],
+                "summary": "Ver una tienda (público)",
+                "operationId": "2b2117386cae77630eba0370026a02a1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tienda encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tienda"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No encontrada"
+                    }
+                }
+            }
         }
     },
     "components": {
         "schemas": {
+            "Artesano": {
+                "title": "Artesano",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "María López"
+                    }
+                },
+                "type": "object"
+            },
             "Articulo": {
                 "title": "Articulo",
                 "properties": {
@@ -310,6 +498,38 @@
                     }
                 },
                 "type": "object"
+            },
+            "Categoria": {
+                "title": "Categoria",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Textiles"
+                    },
+                    "descripcion": {
+                        "type": "string",
+                        "example": "Prendas tejidas a mano"
+                    }
+                },
+                "type": "object"
+            },
+            "Tienda": {
+                "title": "Tienda",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Artesanías del Sur"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -322,12 +542,24 @@
     },
     "tags": [
         {
+            "name": "Artesanos",
+            "description": "Artesanos"
+        },
+        {
             "name": "Articulos",
             "description": "Articulos"
         },
         {
             "name": "Auth",
             "description": "Auth"
+        },
+        {
+            "name": "Categorias",
+            "description": "Categorias"
+        },
+        {
+            "name": "Tiendas",
+            "description": "Tiendas"
         }
     ]
 }
