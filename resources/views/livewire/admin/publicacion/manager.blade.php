@@ -1,43 +1,43 @@
 <?php
 
-use function Livewire\Volt\{computed};
+use App\Services\Publicaciones\PublicacionesDataService;
+use function Livewire\Volt\{state, computed};
 
-// Mismo dataset que table.blade.php — TODO: cuando exista el modelo, ambos deben
-// consultar la misma fuente (ej. un scope en el modelo Publicacion) para no duplicar.
-$dataset = [
-    ['id' => 1,  'estado' => 'Pendiente'],
-    ['id' => 2,  'estado' => 'Revisión'],
-    ['id' => 3,  'estado' => 'Pendiente'],
-    ['id' => 4,  'estado' => 'Aprobado'],
-    ['id' => 5,  'estado' => 'Pendiente'],
-    ['id' => 6,  'estado' => 'Rechazado'],
-    ['id' => 7,  'estado' => 'Revisión'],
-    ['id' => 8,  'estado' => 'Aprobado'],
-    ['id' => 9,  'estado' => 'Pendiente'],
-    ['id' => 10, 'estado' => 'Aprobado'],
-    ['id' => 11, 'estado' => 'Pendiente'],
-    ['id' => 12, 'estado' => 'Revisión'],
-];
+state([
+    'error' => null,
+]);
 
-$stats = computed(function () use ($dataset) {
-    $items = collect($dataset);
+$stats = computed(function () {
+    try {
+        $items = collect(app(PublicacionesDataService::class)->reportadas());
+        $this->error = null;
+    } catch (\Throwable $e) {
+        $this->error = 'No se pudieron cargar las estadísticas de publicaciones.';
+        $items = collect();
+    }
+
     return [
-        'pendientes' => $items->where('estado', 'Pendiente')->count(),
-        'aprobados'  => $items->where('estado', 'Aprobado')->count(), // TODO: filtrar por hoy cuando haya fechas reales
-        'revision'   => $items->where('estado', 'Revisión')->count(),
+        'reportadas'    => $items->count(),
+        'revisadas'     => $items->where('estado', 'REVISADO')->count(),
+        'dadas_de_baja' => $items->where('estado', 'ELIMINADO')->count(),
     ];
 });
 ?>
 
 <div class="space-y-6" x-on:publicacion-actualizada.window="$wire.$refresh()">
 
-    {{-- Tarjetas de estadísticas --}}
+    @if ($error)
+    <div class="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl font-bold shadow-sm">
+        {{ $error }}
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white rounded-3xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between">
             <div>
-                <div class="text-sm text-neutral-400">Pendientes</div>
-                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['pendientes'] }}</div>
-                <div class="text-xs text-rose-500 font-medium mt-1">⚠ Requieren atención</div>
+                <div class="text-sm text-neutral-400">Publicaciones reportadas</div>
+                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['reportadas'] }}</div>
+                <div class="text-xs text-rose-500 font-medium mt-1">Requieren atención</div>
             </div>
             <div class="w-11 h-11 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-500">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,9 +48,9 @@ $stats = computed(function () use ($dataset) {
 
         <div class="bg-white rounded-3xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between">
             <div>
-                <div class="text-sm text-neutral-400">Aprobados</div>
-                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['aprobados'] }}</div>
-                <div class="text-xs text-emerald-500 font-medium mt-1">↗ Catálogo activo</div>
+                <div class="text-sm text-neutral-400">Aprobaron el dictamen</div>
+                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['revisadas'] }}</div>
+                <div class="text-xs text-emerald-500 font-medium mt-1">Sin motivo para bajarlas</div>
             </div>
             <div class="w-11 h-11 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-500">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,19 +61,18 @@ $stats = computed(function () use ($dataset) {
 
         <div class="bg-white rounded-3xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between">
             <div>
-                <div class="text-sm text-neutral-400">Revisiones</div>
-                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['revision'] }}</div>
-                <div class="text-xs text-amber-500 font-medium mt-1">✎ Necesitan feedback</div>
+                <div class="text-sm text-neutral-400">Dadas de baja</div>
+                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['dadas_de_baja'] }}</div>
+                <div class="text-xs text-neutral-500 font-medium mt-1">Retiradas del catálogo</div>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-500">
+            <div class="w-11 h-11 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-500">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </div>
         </div>
     </div>
 
-    {{-- Tabla --}}
     <livewire:admin.publicacion.table />
 
     <livewire:admin.publicacion.form />

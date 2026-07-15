@@ -98,7 +98,8 @@ new class extends Component {
     wire:click="exportarReporte"
     wire:loading.attr="disabled"
     wire:target="exportarReporte"
-    class="w-full py-2.5 text-sm font-bold text-[#D81B60] bg-white border border-[#D81B60]/30 rounded-full hover:bg-pink-50 transition mt-4 flex-shrink-0 disabled:opacity-50">
+    @disabled($cargando || $error || empty($productos))
+    class="w-full py-2.5 text-sm font-bold text-[#D81B60] bg-white border border-[#D81B60]/30 rounded-full hover:bg-pink-50 transition mt-4 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white">
     <span wire:loading.remove wire:target="exportarReporte">Exportar Reporte</span>
     <span wire:loading wire:target="exportarReporte">Generando PDF...</span>
 </button>
