@@ -12,6 +12,9 @@ class ArticuloResource extends JsonResource
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
+            'descripcion' => $this->descripcion,
+            'precio' => $this->precio,
+            'stock' => $this->stock,
             'talla' => $this->talla,
             'color' => $this->color,
             'bordado' => $this->bordado,

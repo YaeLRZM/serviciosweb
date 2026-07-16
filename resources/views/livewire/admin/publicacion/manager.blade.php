@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Publicaciones\PublicacionesDataService;
+use App\Services\Api\ArticuloApiService;
 use function Livewire\Volt\{state, computed};
 
 state([
@@ -9,22 +9,23 @@ state([
 
 $stats = computed(function () {
     try {
-        $items = collect(app(PublicacionesDataService::class)->reportadas());
-        $this->error = null;
+        $respuesta = app(ArticuloApiService::class)->all();
+        $items = collect($respuesta->successful() ? $respuesta->json('data', []) : []);
+        $this->error = $respuesta->successful() ? null : 'No se pudieron cargar las estadísticas de artículos.';
     } catch (\Throwable $e) {
-        $this->error = 'No se pudieron cargar las estadísticas de publicaciones.';
+        $this->error = 'No se pudieron cargar las estadísticas de artículos.';
         $items = collect();
     }
 
     return [
-        'reportadas'    => $items->count(),
-        'revisadas'     => $items->where('estado', 'REVISADO')->count(),
-        'dadas_de_baja' => $items->where('estado', 'ELIMINADO')->count(),
+        'total'    => $items->count(),
+        'en_stock' => $items->filter(fn ($i) => (int) ($i['stock'] ?? 0) > 0)->count(),
+        'agotados' => $items->filter(fn ($i) => (int) ($i['stock'] ?? 0) === 0)->count(),
     ];
 });
 ?>
 
-<div class="space-y-6" x-on:publicacion-actualizada.window="$wire.$refresh()">
+<div class="space-y-6" x-on:articulo-actualizado.window="$wire.$refresh()">
 
     @if ($error)
     <div class="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-xl font-bold shadow-sm">
@@ -35,9 +36,9 @@ $stats = computed(function () {
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white rounded-3xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between">
             <div>
-                <div class="text-sm text-neutral-400">Publicaciones reportadas</div>
-                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['reportadas'] }}</div>
-                <div class="text-xs text-rose-500 font-medium mt-1">Requieren atención</div>
+                <div class="text-sm text-neutral-400">Artículos totales</div>
+                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['total'] }}</div>
+                <div class="text-xs text-neutral-500 font-medium mt-1">En el catálogo</div>
             </div>
             <div class="w-11 h-11 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-500">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,9 +49,9 @@ $stats = computed(function () {
 
         <div class="bg-white rounded-3xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between">
             <div>
-                <div class="text-sm text-neutral-400">Aprobaron el dictamen</div>
-                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['revisadas'] }}</div>
-                <div class="text-xs text-emerald-500 font-medium mt-1">Sin motivo para bajarlas</div>
+                <div class="text-sm text-neutral-400">En stock</div>
+                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['en_stock'] }}</div>
+                <div class="text-xs text-emerald-500 font-medium mt-1">Disponibles para venta</div>
             </div>
             <div class="w-11 h-11 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-500">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,9 +62,9 @@ $stats = computed(function () {
 
         <div class="bg-white rounded-3xl border border-neutral-100 shadow-sm p-5 flex items-start justify-between">
             <div>
-                <div class="text-sm text-neutral-400">Dadas de baja</div>
-                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['dadas_de_baja'] }}</div>
-                <div class="text-xs text-neutral-500 font-medium mt-1">Retiradas del catálogo</div>
+                <div class="text-sm text-neutral-400">Agotados</div>
+                <div class="text-3xl font-bold text-neutral-900 mt-1">{{ $this->stats['agotados'] }}</div>
+                <div class="text-xs text-rose-500 font-medium mt-1">Sin existencias</div>
             </div>
             <div class="w-11 h-11 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-500">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

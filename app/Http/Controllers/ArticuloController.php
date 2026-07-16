@@ -148,16 +148,63 @@ class ArticuloController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    #[OA\Put(
+        path: '/api/articulos/{id}',
+        summary: 'Actualizar un artículo (requiere permiso editarArticulos)',
+        security: [['bearerAuth' => []]],
+        tags: ['Articulos'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['nombre', 'precio', 'stock'],
+                properties: [
+                    new OA\Property(property: 'nombre', type: 'string', example: 'Huipil bordado'),
+                    new OA\Property(property: 'descripcion', type: 'string', example: 'Bordado a mano'),
+                    new OA\Property(property: 'precio', type: 'number', format: 'float', example: 1250.00),
+                    new OA\Property(property: 'stock', type: 'integer', example: 12),
+                ],
+                type: 'object'
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Artículo actualizado', content: new OA\JsonContent(ref: '#/components/schemas/Articulo')),
+            new OA\Response(response: 403, description: 'Sin permiso'),
+            new OA\Response(response: 422, description: 'Datos inválidos'),
+        ]
+    )]
     public function update(UpdateArticuloRequest $request, Articulo $articulo)
     {
-        //
+        $articulo->update($request->validated());
+        $articulo->load(['categoria', 'artesano', 'tienda', 'imagenes']);
+
+        return new ArticuloResource($articulo);
     }
 
     /**
      * Remove the specified resource from storage.
      */
+    #[OA\Delete(
+        path: '/api/articulos/{id}',
+        summary: 'Eliminar un artículo (requiere permiso eliminarArticulos)',
+        security: [['bearerAuth' => []]],
+        tags: ['Articulos'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Artículo eliminado'),
+            new OA\Response(response: 403, description: 'Sin permiso'),
+        ]
+    )]
     public function destroy(Articulo $articulo)
     {
-        //
+        abort_unless(request()->user('api')?->hasPermissionTo('eliminarArticulos', 'web'), 403, 'No autorizado');
+
+        $articulo->delete();
+
+        return response()->json(['message' => 'Artículo eliminado correctamente']);
     }
 }

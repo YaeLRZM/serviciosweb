@@ -18,6 +18,9 @@ return new class extends Migration
             $table->foreignId('artesano_id')->constrained()->onDelete('cascade');
             $table->foreignId('tienda_id')->constrained()->onDelete('cascade');
             $table->string('nombre');
+            $table->text('descripcion')->nullable();
+            $table->decimal('precio', 10, 2)->default(0);
+            $table->integer('stock')->default(0);
             $table->text('talla');
             $table->text('color');
             $table->text('bordado');

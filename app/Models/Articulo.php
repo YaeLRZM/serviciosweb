@@ -15,11 +15,19 @@ class Articulo extends Model
         'artesano_id',
         'tienda_id',
         'nombre',
+        'descripcion',
+        'precio',
+        'stock',
         'talla',
         'color',
         'bordado',
         'tela',
         'region'
+    ];
+
+    protected $casts = [
+        'precio' => 'decimal:2',
+        'stock' => 'integer',
     ];
 
     public function categoria()
