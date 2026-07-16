@@ -1,20 +1,35 @@
 <?php
 
 use App\Services\Usuarios\UsuariosDataService;
-use function Livewire\Volt\{computed};
+use Illuminate\Support\Facades\Schema;
+use function Livewire\Volt\{state, computed};
+
+// No mostrar métricas de estatus si la columna no existe en PostgreSQL.
+$tieneEstatus = Schema::hasColumn('users', 'estatus');
+
+state(['tieneEstatus' => $tieneEstatus]);
 
 $stats = computed(function () {
     try {
         $usuarios = collect(app(UsuariosDataService::class)->listar());
-    } catch (\RuntimeException $e) {
+    } catch (\Throwable $e) {
         return ['total' => 0, 'marcados' => 0, 'administradores' => 0, 'nuevos' => 0];
     }
 
     return [
         'total' => $usuarios->count(),
-        'marcados' => $usuarios->where('estatus', 'marcado')->count(),
+        // Solo cuenta real si existe users.estatus; si no, 0 y la card no se muestra.
+        'marcados' => $this->tieneEstatus
+            ? $usuarios->where('estatus', 'marcado')->count()
+            : 0,
         'administradores' => $usuarios->where('rol', 'admin')->count(),
-        'nuevos' => $usuarios->filter(fn($u) => \Illuminate\Support\Carbon::parse($u['created_at'])->gte(now()->subDays(7)))->count(),
+        'nuevos' => $usuarios->filter(function ($u) {
+            if (empty($u['created_at'])) {
+                return false;
+            }
+
+            return \Illuminate\Support\Carbon::parse($u['created_at'])->gte(now()->subDays(7));
+        })->count(),
     ];
 });
 ?>
@@ -22,7 +37,7 @@ $stats = computed(function () {
 <div class="space-y-6" x-on:usuario-actualizado.window="$wire.$refresh()">
 
     {{-- Estadísticas --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 {{ $tieneEstatus ? 'lg:grid-cols-4' : 'lg:grid-cols-3' }} gap-4">
         <x-admin.stat-mini-card
             label="Total de usuarios"
             :value="number_format($this->stats['total'])"
@@ -35,6 +50,7 @@ $stats = computed(function () {
             </svg>
         </x-admin.stat-mini-card>
 
+        @if ($tieneEstatus)
         <x-admin.stat-mini-card
             label="Cuentas marcadas"
             :value="$this->stats['marcados']"
@@ -47,6 +63,7 @@ $stats = computed(function () {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h1.5V16.5h9l-.75-3 .75-3h-9V3H3z" />
             </svg>
         </x-admin.stat-mini-card>
+        @endif
 
         <x-admin.stat-mini-card
             label="Administradores"

@@ -1,7 +1,10 @@
 <?php
 
 use App\Services\Usuarios\UsuariosDataService;
+use Illuminate\Support\Facades\Schema;
 use function Livewire\Volt\{state, computed};
+
+$tieneEstatus = Schema::hasColumn('users', 'estatus');
 
 state([
     'rol' => 'Todos',
@@ -9,15 +12,23 @@ state([
     'busqueda' => '',
     'page' => 1,
     'error' => null,
+    'tieneEstatus' => $tieneEstatus,
 ]);
 
-$roles = computed(fn() => ['Todos' => 'Todos los roles', 'admin' => 'Administrador', 'user' => 'Usuario', 'guest' => 'Invitado']);
+$roles = computed(fn() => [
+    'Todos' => 'Todos los roles',
+    'admin' => 'Administrador',
+    'user' => 'Usuario',
+    'guest' => 'Invitado',
+    'sin_rol' => 'Sin rol',
+]);
 $estatuses = computed(fn() => ['Todos' => 'Todos los estatus', 'activo' => 'Activo', 'suspendido' => 'Suspendido', 'marcado' => 'Marcado']);
 
 $rolBadges = computed(fn() => [
     'admin' => 'bg-[#D81B60]/10 text-[#D81B60]',
     'user'  => 'bg-sky-50 text-sky-700',
     'guest' => 'bg-neutral-100 text-neutral-600',
+    'sin_rol' => 'bg-neutral-100 text-neutral-500',
 ]);
 
 $estatusBadges = computed(fn() => [
@@ -36,29 +47,21 @@ $dataset = computed(function () {
     try {
         $this->error = null;
 
-        return collect(app(UsuariosDataService::class)->listar($filtros))->map(function ($u) {
-            // Schema actual de users: nombre / apellido_* (no existe "name")
-            $nombreCompleto = trim(implode(' ', array_filter([
-                $u['nombre'] ?? null,
-                $u['apellido_paterno'] ?? null,
-                $u['apellido_materno'] ?? null,
-            ])));
-
-            return [
-                'id' => $u['id'],
-                'nombre' => $nombreCompleto !== '' ? $nombreCompleto : ($u['email'] ?? 'Sin nombre'),
-                'codigo' => 'UA-' . str_pad((string) $u['id'], 4, '0', STR_PAD_LEFT),
-                'email' => $u['email'] ?? '',
-                'foto' => null,
-                'rol' => $u['rol'] ?? 'user',
-                'estatus' => $u['estatus'] ?? 'activo',
-                'ingreso' => ! empty($u['created_at'])
-                    ? \Illuminate\Support\Carbon::parse($u['created_at'])->translatedFormat('d M Y')
-                    : '—',
-            ];
-        });
-    } catch (\RuntimeException $e) {
-        $this->error = $e->getMessage();
+        // Fuente real: UsuariosDataService::listar (users + roles Spatie).
+        return collect(app(UsuariosDataService::class)->listar($filtros))->map(fn ($u) => [
+            'id' => $u['id'],
+            'nombre' => $u['nombre'],
+            'codigo' => 'UA-' . str_pad((string) $u['id'], 4, '0', STR_PAD_LEFT),
+            'email' => $u['email'] ?? '',
+            'foto' => null,
+            'rol' => $u['rol'] ?? 'sin_rol',
+            'estatus' => $u['estatus'] ?? 'activo',
+            'ingreso' => ! empty($u['created_at'])
+                ? \Illuminate\Support\Carbon::parse($u['created_at'])->translatedFormat('d M Y')
+                : '—',
+        ]);
+    } catch (\Throwable $e) {
+        $this->error = 'No se pudieron cargar los usuarios desde la base de datos.';
 
         return collect();
     }
@@ -86,6 +89,12 @@ $irAPagina = function ($p) {
 };
 
 $alternarSuspension = function ($id) {
+    // No simular éxito si la columna no existe en PostgreSQL.
+    if (! $this->tieneEstatus) {
+        session()->flash('error', 'El estatus no se puede cambiar: la columna users.estatus no existe en la base de datos.');
+        return;
+    }
+
     $actual = $this->dataset->firstWhere('id', $id);
     $nuevoEstatus = ($actual['estatus'] ?? 'activo') === 'suspendido' ? 'activo' : 'suspendido';
 
@@ -93,7 +102,7 @@ $alternarSuspension = function ($id) {
         app(UsuariosDataService::class)->actualizar($id, ['estatus' => $nuevoEstatus]);
         unset($this->dataset);
         session()->flash('mensaje', 'Estatus del usuario actualizado.');
-    } catch (\RuntimeException $e) {
+    } catch (\Throwable $e) {
         session()->flash('error', $e->getMessage());
     }
 };
@@ -131,6 +140,7 @@ $eliminar = function ($id) {
                 </svg>
             </div>
 
+            @if ($tieneEstatus)
             <div class="relative">
                 <select wire:model.live="estatus" class="appearance-none bg-white border-neutral-200 rounded-full text-sm py-2 pl-4 pr-9 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] cursor-pointer">
                     @foreach ($this->estatuses as $valor => $etiqueta)
@@ -141,6 +151,7 @@ $eliminar = function ($id) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </div>
+            @endif
 
             <div class="relative">
                 <input
@@ -173,14 +184,16 @@ $eliminar = function ($id) {
                     <th class="px-5 py-4 border-b border-neutral-100">Usuario</th>
                     <th class="px-5 py-4 border-b border-neutral-100">Email</th>
                     <th class="px-5 py-4 border-b border-neutral-100">Rol</th>
+                    @if ($tieneEstatus)
                     <th class="px-5 py-4 border-b border-neutral-100">Estatus</th>
+                    @endif
                     <th class="px-5 py-4 border-b border-neutral-100">Ingreso</th>
                     <th class="px-5 py-4 border-b border-neutral-100 text-right">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-neutral-100">
                 @forelse ($this->filtered['items'] as $item)
-                <tr class="hover:bg-neutral-50/60 transition {{ $item['estatus'] === 'suspendido' ? 'opacity-70' : '' }}">
+                <tr class="hover:bg-neutral-50/60 transition {{ ($tieneEstatus && $item['estatus'] === 'suspendido') ? 'opacity-70' : '' }}">
                     <td class="px-5 py-4">
                         <div class="flex items-center gap-3">
                             @if ($item['foto'])
@@ -204,6 +217,7 @@ $eliminar = function ($id) {
                             {{ $this->roles[$item['rol']] ?? $item['rol'] }}
                         </span>
                     </td>
+                    @if ($tieneEstatus)
                     <td class="px-5 py-4">
                         @php $eb = $this->estatusBadges[$item['estatus']] ?? ['dot' => 'bg-neutral-400', 'text' => 'bg-neutral-100 text-neutral-600']; @endphp
                         <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full {{ $eb['text'] }}">
@@ -211,6 +225,7 @@ $eliminar = function ($id) {
                             {{ $this->estatuses[$item['estatus']] ?? $item['estatus'] }}
                         </span>
                     </td>
+                    @endif
                     <td class="px-5 py-4 text-neutral-500">{{ $item['ingreso'] }}</td>
                     <td class="px-5 py-4">
                         <div class="flex items-center justify-end gap-1">
@@ -223,25 +238,27 @@ $eliminar = function ($id) {
                                 </svg>
                             </button>
 
-                            @if ($item['estatus'] === 'suspendido')
-                            <button
-                                wire:click="alternarSuspension({{ $item['id'] }})"
-                                class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 transition"
-                                title="Reactivar">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </button>
-                            @else
-                            <button
-                                wire:click="alternarSuspension({{ $item['id'] }})"
-                                wire:confirm="¿Suspender a este usuario?"
-                                class="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-400 hover:text-rose-600 transition"
-                                title="Suspender">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 105.636 5.636a9 9 0 0012.728 12.728zM6 6l12 12" />
-                                </svg>
-                            </button>
+                            @if ($tieneEstatus)
+                                @if ($item['estatus'] === 'suspendido')
+                                <button
+                                    wire:click="alternarSuspension({{ $item['id'] }})"
+                                    class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 transition"
+                                    title="Reactivar">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </button>
+                                @else
+                                <button
+                                    wire:click="alternarSuspension({{ $item['id'] }})"
+                                    wire:confirm="¿Suspender a este usuario?"
+                                    class="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-400 hover:text-rose-600 transition"
+                                    title="Suspender">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 105.636 5.636a9 9 0 0012.728 12.728zM6 6l12 12" />
+                                    </svg>
+                                </button>
+                                @endif
                             @endif
 
                             <button
@@ -258,7 +275,7 @@ $eliminar = function ($id) {
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-5 py-10 text-center text-neutral-400 text-sm">
+                    <td colspan="{{ $tieneEstatus ? 6 : 5 }}" class="px-5 py-10 text-center text-neutral-400 text-sm">
                         No hay usuarios que coincidan con el filtro.
                     </td>
                 </tr>

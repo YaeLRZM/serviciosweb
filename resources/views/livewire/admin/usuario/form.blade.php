@@ -1,7 +1,11 @@
 <?php
 
 use App\Services\Usuarios\UsuariosDataService;
+use Illuminate\Support\Facades\Schema;
 use function Livewire\Volt\{state, on, rules};
+
+// Schema runtime (pgsql actual no tiene users.estatus)
+$tieneEstatus = Schema::hasColumn('users', 'estatus');
 
 state([
     'isOpen' => false,
@@ -12,6 +16,7 @@ state([
     'password' => '',
     'rol' => 'user',
     'estatus' => 'activo',
+    'tieneEstatus' => $tieneEstatus,
 ]);
 
 on(['abrirUsuario' => function ($id) {
@@ -24,8 +29,9 @@ on(['abrirUsuario' => function ($id) {
 
     $this->modo = 'editar';
     $this->usuarioId = $id;
-    $this->nombre = $usuario['name'];
-    $this->email = $usuario['email'];
+    // Preferir nombre de pila real; fallback al nombre completo mapeado
+    $this->nombre = $usuario['nombre_raw'] ?? $usuario['nombre'] ?? $usuario['name'] ?? '';
+    $this->email = $usuario['email'] ?? '';
     $this->password = '';
     $this->rol = $usuario['rol'] ?? 'user';
     $this->estatus = $usuario['estatus'] ?? 'activo';
@@ -56,30 +62,29 @@ $guardar = function () {
     $this->validate();
 
     try {
+        $payload = [
+            'nombre' => $this->nombre,
+            'email' => $this->email,
+            'password' => $this->password,
+            'rol' => $this->rol,
+        ];
+        // Solo enviar estatus si la columna existe en la BD runtime
+        if ($this->tieneEstatus) {
+            $payload['estatus'] = $this->estatus;
+        }
+
         if ($this->modo === 'crear') {
-            app(UsuariosDataService::class)->crear([
-                'name' => $this->nombre,
-                'email' => $this->email,
-                'password' => $this->password,
-                'rol' => $this->rol,
-                'estatus' => $this->estatus,
-            ]);
+            app(UsuariosDataService::class)->crear($payload);
             session()->flash('mensaje', 'Usuario creado.');
         } else {
-            app(UsuariosDataService::class)->actualizar($this->usuarioId, [
-                'name' => $this->nombre,
-                'email' => $this->email,
-                'password' => $this->password,
-                'rol' => $this->rol,
-                'estatus' => $this->estatus,
-            ]);
+            app(UsuariosDataService::class)->actualizar($this->usuarioId, $payload);
             session()->flash('mensaje', 'Usuario actualizado.');
         }
 
         $this->isOpen = false;
         $this->dispatch('usuario-actualizado');
-    } catch (\RuntimeException $e) {
-        session()->flash('error', $e->getMessage());
+    } catch (\Throwable $e) {
+        session()->flash('error', 'No se pudo guardar el usuario. Revisa los datos e intenta de nuevo.');
     }
 };
 ?>
@@ -124,6 +129,7 @@ $guardar = function () {
                 </select>
             </div>
 
+            @if ($tieneEstatus)
             <div>
                 <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Estatus</label>
                 <div class="grid grid-cols-3 gap-3">
@@ -141,6 +147,7 @@ $guardar = function () {
                     </button>
                 </div>
             </div>
+            @endif
 
             <div class="flex justify-end gap-2.5 pt-2">
                 <button type="button" wire:click="$set('isOpen', false)" class="text-xs font-bold text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition">
