@@ -2,17 +2,20 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\AuthorizesApiPermission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreArtesanoRequest extends FormRequest
 {
+    use AuthorizesApiPermission;
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('crearArtesanos') ?? false;
+        return $this->allowIfCan('crearArtesanos');
     }
 
     /**

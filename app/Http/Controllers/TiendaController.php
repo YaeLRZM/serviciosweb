@@ -76,7 +76,7 @@ class TiendaController extends Controller
      */
     public function destroy(Tienda $tienda)
     {
-        abort_unless(request()->user()?->can('eliminarTiendas'), 403, 'No autorizado');
+        abort_unless(request()->user('api')?->hasPermissionTo('eliminarTiendas', 'web'), 403, 'No autorizado');
 
         $tienda->delete();
         return response()->json(['message' => 'Tienda eliminada correctamente']);

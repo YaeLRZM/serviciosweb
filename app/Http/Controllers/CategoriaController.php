@@ -92,7 +92,7 @@ class CategoriaController extends Controller
      */
     public function destroy(Categoria $categoria)
     {
-        abort_unless(request()->user()?->can('eliminarCategorias'), 403, 'No autorizado');
+        abort_unless(request()->user('api')?->hasPermissionTo('eliminarCategorias', 'web'), 403, 'No autorizado');
 
         $categoria->delete();
         return response()->json(['message' => 'Categoria eliminada correctamente']);

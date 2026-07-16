@@ -12,7 +12,7 @@ class UpdateArticuloRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('editarArticulos') ?? false;
+        return $this->allowIfCan('editarArticulos');
     }
 
     /**

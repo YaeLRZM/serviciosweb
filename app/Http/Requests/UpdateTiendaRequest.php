@@ -2,17 +2,20 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\AuthorizesApiPermission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTiendaRequest extends FormRequest
 {
+    use AuthorizesApiPermission;
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('editarTiendas') ?? false;
+        return $this->allowIfCan('editarTiendas');
     }
 
     /**
