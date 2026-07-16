@@ -13,7 +13,7 @@ class ResenaController extends Controller
      */
     public function index()
     {
-        //
+        return Resena::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class ResenaController extends Controller
      */
     public function store(StoreResenaRequest $request)
     {
-        //
+        $resena = Resena::create($request->validated());
+        return response()->json(['message' => 'Reseña creada correctamente', 'resena' => $resena], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class ResenaController extends Controller
      */
     public function show(Resena $resena)
     {
-        //
+        return response()->json(['resena' => $resena], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class ResenaController extends Controller
      */
     public function update(UpdateResenaRequest $request, Resena $resena)
     {
-        //
+        $resena->update($request->validated());
+        return response()->json(['message' => 'Reseña actualizada correctamente', 'resena' => $resena], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class ResenaController extends Controller
      */
     public function destroy(Resena $resena)
     {
-        //
+        $resena->delete();
+        return response()->json(['message' => 'Reseña eliminada correctamente'], 200);
     }
 }
