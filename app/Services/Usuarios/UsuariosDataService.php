@@ -3,6 +3,7 @@
 namespace App\Services\Usuarios;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class UsuariosDataService
@@ -26,22 +27,25 @@ class UsuariosDataService
 
         if (! empty($filtros['busqueda'])) {
             $busqueda = $filtros['busqueda'];
-            $query->where(function ($q) use ($busqueda) {
+            // PostgreSQL: ILIKE = LIKE case-insensitive. SQLite/MySQL fallback: LIKE (sqlite LIKE ya es CI).
+            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+            $query->where(function ($q) use ($busqueda, $like) {
                 // Schema Laravel clásico: name
                 if (Schema::hasColumn('users', 'name')) {
-                    $q->where('name', 'like', "%{$busqueda}%");
+                    $q->where('name', $like, "%{$busqueda}%");
                 }
                 // Schema extendido: nombre + apellidos
                 if (Schema::hasColumn('users', 'nombre')) {
-                    $q->orWhere('nombre', 'like', "%{$busqueda}%");
+                    $q->orWhere('nombre', $like, "%{$busqueda}%");
                 }
                 if (Schema::hasColumn('users', 'apellido_paterno')) {
-                    $q->orWhere('apellido_paterno', 'like', "%{$busqueda}%");
+                    $q->orWhere('apellido_paterno', $like, "%{$busqueda}%");
                 }
                 if (Schema::hasColumn('users', 'apellido_materno')) {
-                    $q->orWhere('apellido_materno', 'like', "%{$busqueda}%");
+                    $q->orWhere('apellido_materno', $like, "%{$busqueda}%");
                 }
-                $q->orWhere('email', 'like', "%{$busqueda}%");
+                $q->orWhere('email', $like, "%{$busqueda}%");
             });
         }
 
