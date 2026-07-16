@@ -1,16 +1,12 @@
 <?php
 
+use App\Services\Artesanos\ArtesanosDataService;
 use function Livewire\Volt\{computed};
 
-// TODO: reemplazar por Artesano::where('estado_verificacion', 'pendiente')->get()
-$colaVerificacion = computed(fn() => [
-    ['id' => 1, 'nombre' => 'Mateo Ruiz', 'especialidad' => 'Alebrije Carving', 'foto' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200', 'estado' => 'revision', 'estadoLabel' => 'En revisión', 'accionLabel' => 'Ver detalle'],
-    ['id' => 2, 'nombre' => 'Isabel Gomez', 'especialidad' => 'San Antonino Embroidery', 'foto' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200', 'estado' => 'nueva', 'estadoLabel' => 'Nueva solicitud', 'accionLabel' => 'Ver detalle'],
-    ['id' => 3, 'nombre' => 'Pedro Sanchez', 'especialidad' => 'Barro Negro Pottery', 'foto' => 'https://images.unsplash.com/photo-1622037022824-0c71d511ad60?w=200', 'estado' => 'documentos', 'estadoLabel' => 'Documentación pendiente', 'accionLabel' => 'Contactar'],
-]);
+$colaVerificacion = computed(fn() => app(ArtesanosDataService::class)->colaVerificacion());
 ?>
 
-<div class="space-y-8">
+<div class="space-y-8" x-on:artesano-actualizado.window="$wire.$refresh()">
 
     {{-- Cola de verificación --}}
     <section>

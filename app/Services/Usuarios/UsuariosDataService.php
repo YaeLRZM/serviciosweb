@@ -3,17 +3,26 @@
 namespace App\Services\Usuarios;
 
 use App\Models\User;
+use App\Support\Mock\UsuariosMock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class UsuariosDataService
 {
+    protected function usarMock(): bool
+    {
+        return (bool) config('features.mock_usuarios', true);
+    }
+
     /**
-     * Listado real de users + roles (Spatie), con filtros opcionales.
-     * Devuelve arrays listos para la vista admin (sin mocks).
+     * Listado de usuarios + rol, con filtros opcionales.
      */
     public function listar(array $filtros = []): array
     {
+        if ($this->usarMock()) {
+            return $this->filtrarMock(UsuariosMock::all(), $filtros);
+        }
+
         $query = User::query()->with('roles');
 
         if (! empty($filtros['rol'])) {
@@ -57,6 +66,10 @@ class UsuariosDataService
 
     public function crear(array $data): array
     {
+        if ($this->usarMock()) {
+            return UsuariosMock::crear($data);
+        }
+
         $rol = $data['rol'] ?? 'user';
         unset($data['rol']);
 
@@ -72,6 +85,10 @@ class UsuariosDataService
 
     public function find(int $id): ?array
     {
+        if ($this->usarMock()) {
+            return UsuariosMock::find($id);
+        }
+
         $usuario = User::query()->with('roles')->find($id);
 
         return $usuario ? $this->mapearParaVista($usuario) : null;
@@ -82,6 +99,10 @@ class UsuariosDataService
      */
     public function actualizar(int $id, array $data): array
     {
+        if ($this->usarMock()) {
+            return UsuariosMock::actualizar($id, $data);
+        }
+
         $usuario = User::findOrFail($id);
 
         $rol = $data['rol'] ?? null;
@@ -102,9 +123,23 @@ class UsuariosDataService
         return $this->mapearParaVista($usuario->load('roles'));
     }
 
-    public function eliminar(int $id): void
+    /**
+     * Aplica los mismos filtros que la consulta SQL (rol, estatus, búsqueda) sobre el dataset mock.
+     */
+    protected function filtrarMock(array $items, array $filtros): array
     {
-        User::findOrFail($id)->delete();
+        return collect($items)
+            ->when(! empty($filtros['rol']), fn ($q) => $q->where('rol', $filtros['rol']))
+            ->when(! empty($filtros['estatus']), fn ($q) => $q->where('estatus', $filtros['estatus']))
+            ->when(! empty($filtros['busqueda']), function ($q) use ($filtros) {
+                $busqueda = mb_strtolower($filtros['busqueda']);
+
+                return $q->filter(fn ($item) => str_contains(mb_strtolower($item['nombre'] ?? ''), $busqueda)
+                    || str_contains(mb_strtolower($item['email'] ?? ''), $busqueda));
+            })
+            ->sortByDesc('created_at')
+            ->values()
+            ->all();
     }
 
     /**

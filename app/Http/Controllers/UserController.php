@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = User::query()->with('roles');
 
@@ -46,7 +47,7 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $user = User::create($request->validated());
-        return response()->json(['message'=>'Usuario creado correctamente','usuario'=>$usuario],201);
+        return response()->json(['message' => 'Usuario creado correctamente', 'usuario' => $user], 201);
     }
 
     /**
@@ -75,11 +76,12 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deshabilita al usuario (no se elimina de la base de datos).
+     * Para reactivarlo: PUT/PATCH /api/usuarios/{usuario} con estatus=activo.
      */
     public function destroy(User $user)
     {
-        $user->delete();
-        return response()->json(['message' => 'Usuario eliminado correctamente']);
+        $user->update(['estatus' => 'suspendido']);
+        return response()->json(['message' => 'Usuario deshabilitado correctamente']);
     }
 }

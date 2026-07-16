@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Artesanos\ArtesanosDataService;
 use function Livewire\Volt\{state, on};
 
 state([
@@ -12,27 +13,23 @@ state([
 ]);
 
 on(['abrirRevisionArtesano' => function ($id) {
-    // TODO: reemplazar por Artesano::findOrFail($id)
-    $mock = [
-        1 => ['nombre' => 'Mateo Ruiz', 'especialidad' => 'Alebrije Carving'],
-        2 => ['nombre' => 'Isabel Gomez', 'especialidad' => 'San Antonino Embroidery'],
-        3 => ['nombre' => 'Pedro Sanchez', 'especialidad' => 'Barro Negro Pottery'],
-    ][$id] ?? ['nombre' => 'Artesano #' . $id, 'especialidad' => ''];
+    $artesano = app(ArtesanosDataService::class)->find($id);
+
+    if (! $artesano) {
+        session()->flash('error', 'No se pudo cargar el artesano.');
+        return;
+    }
 
     $this->artesanoId = $id;
-    $this->nombreArtesano = $mock['nombre'];
-    $this->especialidadArtesano = $mock['especialidad'];
+    $this->nombreArtesano = $artesano['nombre'];
+    $this->especialidadArtesano = $artesano['especialidad'];
     $this->dictamen = 'Aprobar';
     $this->notas = '';
     $this->isOpen = true;
 }]);
 
 $guardarDictamen = function () {
-    // TODO: reemplazar por la actualización real, ej:
-    // Artesano::findOrFail($this->artesanoId)->update([
-    //     'estado_verificacion' => $this->dictamen,
-    //     'notas_moderacion' => $this->notas,
-    // ]);
+    app(ArtesanosDataService::class)->guardarDictamen($this->artesanoId, $this->dictamen, $this->notas);
 
     $this->isOpen = false;
     $this->dispatch('artesano-actualizado');

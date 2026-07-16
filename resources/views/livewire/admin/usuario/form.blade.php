@@ -4,8 +4,8 @@ use App\Services\Usuarios\UsuariosDataService;
 use Illuminate\Support\Facades\Schema;
 use function Livewire\Volt\{state, on, rules};
 
-// Schema runtime (pgsql actual no tiene users.estatus)
-$tieneEstatus = Schema::hasColumn('users', 'estatus');
+// En modo mock siempre hay estatus; si no, depende de si la columna existe en BD.
+$tieneEstatus = config('features.mock_usuarios', true) || Schema::hasColumn('users', 'estatus');
 
 state([
     'isOpen' => false,
@@ -139,7 +139,7 @@ $guardar = function () {
                     </button>
                     <button type="button" wire:click="$set('estatus', 'suspendido')"
                         class="p-2.5 rounded-xl border-2 text-xs font-semibold transition-all {{ $estatus === 'suspendido' ? 'border-neutral-400 bg-neutral-100 text-neutral-700' : 'border-gray-100 text-gray-500 hover:bg-gray-50' }}">
-                        Suspendido
+                        Deshabilitado
                     </button>
                     <button type="button" wire:click="$set('estatus', 'marcado')"
                         class="p-2.5 rounded-xl border-2 text-xs font-semibold transition-all {{ $estatus === 'marcado' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-gray-100 text-gray-500 hover:bg-gray-50' }}">

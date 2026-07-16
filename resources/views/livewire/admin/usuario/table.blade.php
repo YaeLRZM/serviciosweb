@@ -4,7 +4,7 @@ use App\Services\Usuarios\UsuariosDataService;
 use Illuminate\Support\Facades\Schema;
 use function Livewire\Volt\{state, computed};
 
-$tieneEstatus = Schema::hasColumn('users', 'estatus');
+$tieneEstatus = config('features.mock_usuarios', true) || Schema::hasColumn('users', 'estatus');
 
 state([
     'rol' => 'Todos',
@@ -22,7 +22,7 @@ $roles = computed(fn() => [
     'guest' => 'Invitado',
     'sin_rol' => 'Sin rol',
 ]);
-$estatuses = computed(fn() => ['Todos' => 'Todos los estatus', 'activo' => 'Activo', 'suspendido' => 'Suspendido', 'marcado' => 'Marcado']);
+$estatuses = computed(fn() => ['Todos' => 'Todos los estatus', 'activo' => 'Activo', 'suspendido' => 'Deshabilitado', 'marcado' => 'Marcado']);
 
 $rolBadges = computed(fn() => [
     'admin' => 'bg-[#D81B60]/10 text-[#D81B60]',
@@ -107,15 +107,6 @@ $alternarSuspension = function ($id) {
     }
 };
 
-$eliminar = function ($id) {
-    try {
-        app(UsuariosDataService::class)->eliminar($id);
-        unset($this->dataset);
-        session()->flash('mensaje', 'Usuario eliminado.');
-    } catch (\RuntimeException $e) {
-        session()->flash('error', $e->getMessage());
-    }
-};
 ?>
 
 <div class="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden" x-on:usuario-actualizado.window="$wire.$refresh()">
@@ -251,25 +242,15 @@ $eliminar = function ($id) {
                                 @else
                                 <button
                                     wire:click="alternarSuspension({{ $item['id'] }})"
-                                    wire:confirm="¿Suspender a este usuario?"
+                                    wire:confirm="¿Deshabilitar a este usuario?"
                                     class="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-400 hover:text-rose-600 transition"
-                                    title="Suspender">
+                                    title="Deshabilitar">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 105.636 5.636a9 9 0 0012.728 12.728zM6 6l12 12" />
                                     </svg>
                                 </button>
                                 @endif
                             @endif
-
-                            <button
-                                wire:click="eliminar({{ $item['id'] }})"
-                                wire:confirm="¿Eliminar permanentemente a este usuario?"
-                                class="w-8 h-8 rounded-full hover:bg-rose-50 flex items-center justify-center text-rose-400 hover:text-rose-600 transition"
-                                title="Eliminar">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                </svg>
-                            </button>
                         </div>
                     </td>
                 </tr>

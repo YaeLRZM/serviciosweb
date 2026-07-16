@@ -4,8 +4,8 @@ use App\Services\Usuarios\UsuariosDataService;
 use Illuminate\Support\Facades\Schema;
 use function Livewire\Volt\{state, computed};
 
-// No mostrar métricas de estatus si la columna no existe en PostgreSQL.
-$tieneEstatus = Schema::hasColumn('users', 'estatus');
+// En modo mock siempre hay estatus; si no, depende de si la columna existe en BD.
+$tieneEstatus = config('features.mock_usuarios', true) || Schema::hasColumn('users', 'estatus');
 
 state(['tieneEstatus' => $tieneEstatus]);
 

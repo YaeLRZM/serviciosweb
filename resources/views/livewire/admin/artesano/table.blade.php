@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Artesanos\ArtesanosDataService;
 use function Livewire\Volt\{state, computed};
 
 state([
@@ -7,12 +8,7 @@ state([
     'page' => 1,
 ]);
 
-// TODO: reemplazar por Artesano::query()->where('activo', true)->orderByDesc('ventas_total')
-$dataset = computed(fn() => [
-    ['id' => 1, 'nombre' => 'Carmen Jimenez', 'ubicacion' => 'Oaxaca City, MX', 'foto' => 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200', 'especialidad' => 'San Antonino Embroidery', 'verificado' => true, 'ventas_total' => 12450.00, 'ventas_items' => 142, 'rating' => 4.9, 'destacado' => true],
-    ['id' => 2, 'nombre' => 'Tomas Vasquez', 'ubicacion' => 'Teotitlán del Valle', 'foto' => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200', 'especialidad' => 'Zapotec Rug Weaving', 'verificado' => true, 'ventas_total' => 8920.00, 'ventas_items' => 68, 'rating' => 4.8, 'destacado' => false],
-    ['id' => 3, 'nombre' => 'Gloria Mendez', 'ubicacion' => 'Arrazola, MX', 'foto' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200', 'especialidad' => 'Hand-painted Alebrijes', 'verificado' => false, 'ventas_total' => 3150.00, 'ventas_items' => 29, 'rating' => 4.7, 'destacado' => false],
-]);
+$dataset = computed(fn() => app(ArtesanosDataService::class)->activos());
 
 $filtered = computed(function () {
     $perPage = 10;
@@ -44,12 +40,13 @@ $irAPagina = function ($p) {
 };
 
 $alternarDestacado = function ($id) {
-    // TODO: Artesano::find($id)->update(['destacado' => !$artesano->destacado]);
+    app(ArtesanosDataService::class)->alternarDestacado($id);
+    unset($this->dataset);
     session()->flash('mensaje', 'Estado destacado actualizado.');
 };
 ?>
 
-<div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-neutral-100">
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-neutral-100" x-on:artesano-actualizado.window="$wire.$refresh()">
 
     {{-- Filtros --}}
     <div class="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-neutral-100">
