@@ -1,7 +1,6 @@
 <?php
 
 use App\Services\Categorias\CategoriasDataService;
-use Illuminate\Support\Facades\Storage;
 use function Livewire\Volt\{state, on, rules, usesFileUploads};
 
 usesFileUploads();
@@ -59,7 +58,9 @@ $guardar = function () {
     $imagen = $this->imagen;
 
     if ($this->imagenArchivo) {
-        $imagen = Storage::url($this->imagenArchivo->store('categorias', 'public'));
+        // Disco public → storage/app/public/categorias; URL relativa pública vía public/storage
+        $path = $this->imagenArchivo->store('categorias', 'public');
+        $imagen = '/storage/' . ltrim($path, '/');
     } elseif ($this->imagenUrl) {
         $imagen = $this->imagenUrl;
     }

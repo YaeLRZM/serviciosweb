@@ -16,6 +16,9 @@ return new class extends Migration
             $table->timestamps();
             $table->string('nombre', 100);
             $table->text('descripcion')->nullable();
+            // Campos que usa el admin Livewire (form/manager)
+            $table->string('imagen', 500)->nullable();
+            $table->boolean('visible')->default(true);
         });
     }
 

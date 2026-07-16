@@ -13,12 +13,11 @@ class Categoria extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'imagen',
+        'visible',
     ];
 
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-    ];
+    // No ocultar timestamps: el admin (manager stats) usa created_at en el listado.
 
     public function articulos()
     {

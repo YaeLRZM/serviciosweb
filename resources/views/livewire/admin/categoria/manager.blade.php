@@ -12,7 +12,13 @@ $stats = computed(function () {
         'total' => $items->count(),
         'visibles' => $items->where('visible', true)->count(),
         'ocultas' => $items->where('visible', false)->count(),
-        'nuevas' => $items->filter(fn ($c) => \Illuminate\Support\Carbon::parse($c['created_at'])->gte(now()->startOfMonth()))->count(),
+        'nuevas' => $items->filter(function ($c) {
+            if (empty($c['created_at'] ?? null)) {
+                return false;
+            }
+
+            return \Illuminate\Support\Carbon::parse($c['created_at'])->gte(now()->startOfMonth());
+        })->count(),
     ];
 });
 
