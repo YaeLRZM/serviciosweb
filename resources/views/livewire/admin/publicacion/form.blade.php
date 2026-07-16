@@ -1,135 +1,164 @@
 <?php
 
-use App\Services\Publicaciones\PublicacionesDataService;
-use function Livewire\Volt\{state, on};
+use App\Livewire\Concerns\InteractsWithApi;
+use App\Livewire\Concerns\RequiresApiAuth;
+use App\Services\Api\ArticuloApiService;
+use Livewire\Attributes\On;
+use Livewire\Volt\Component;
 
-state([
-    'isOpen' => false,
-    'pubId' => null,
-    'publicacion' => null,
-    'error' => null,
-]);
+new class extends Component {
+    use RequiresApiAuth, InteractsWithApi;
 
-on(['abrirDetallePublicacion' => function ($id) {
-    $this->pubId = (int) $id;
-    $this->error = null;
+    public bool $isOpen = false;
+    public ?int $articuloId = null;
 
-    try {
-        $this->publicacion = app(PublicacionesDataService::class)->find($this->pubId);
+    // Campos que pide UpdateArticuloRequest
+    public string $nombre = '';
+    public ?string $descripcion = '';
+    public $precio = null;
+    public $stock = null;
 
-        if (! $this->publicacion) {
-            $this->error = 'No se encontró la publicación solicitada.';
+    public ?string $error = null;
+
+    protected function rules(): array
+    {
+        return [
+            'nombre'      => ['required', 'string', 'max:255'],
+            'descripcion' => ['nullable', 'string'],
+            'precio'      => ['required', 'numeric', 'min:0'],
+            'stock'       => ['required', 'integer', 'min:0'],
+        ];
+    }
+
+    /** Abre el popup de edición y precarga el artículo desde el API. */
+    #[On('editarArticulo')]
+    public function abrir($id): void
+    {
+        $this->resetValidation();
+        $this->reset(['nombre', 'descripcion', 'precio', 'stock', 'error']);
+        $this->articuloId = (int) $id;
+
+        try {
+            $respuesta = app(ArticuloApiService::class)->find($this->articuloId);
+
+            if (! $respuesta->successful()) {
+                $this->error = 'No se pudo cargar el artículo.';
+                $this->isOpen = true;
+                return;
+            }
+
+            $data = $respuesta->json('data', []);
+            $this->nombre      = (string) ($data['nombre'] ?? '');
+            $this->descripcion = $data['descripcion'] ?? '';
+            $this->precio      = $data['precio'] ?? null;
+            $this->stock       = $data['stock'] ?? null;
+        } catch (\Throwable $e) {
+            $this->error = 'No se pudo conectar con el API.';
         }
-    } catch (\Throwable $e) {
-        $this->error = 'No se pudo cargar el detalle de la publicación.';
-        $this->publicacion = null;
+
+        $this->isOpen = true;
     }
 
-    $this->isOpen = true;
-}]);
+    /** Guarda los cambios llamando a PUT /api/articulos/{id}. */
+    public function guardar(): void
+    {
+        $data = $this->validate();
 
-$aplicarDictamen = function (string $estado) {
-    if (! $this->pubId) {
-        return;
+        $respuesta = app(ArticuloApiService::class)->update($this->articuloId, $data);
+
+        if (! $this->handleApiResponse($respuesta, 'Artículo actualizado correctamente.')) {
+            return;
+        }
+
+        $this->isOpen = false;
+        $this->dispatch('articulo-actualizado');
     }
 
-    try {
-        app(PublicacionesDataService::class)->actualizarEstado($this->pubId, $estado);
-    } catch (\Throwable $e) {
-        $this->error = 'No se pudo aplicar el dictamen. Intenta de nuevo.';
-        return;
+    /** Elimina el artículo llamando a DELETE /api/articulos/{id}. */
+    #[On('eliminarArticulo')]
+    public function eliminar($id): void
+    {
+        $respuesta = app(ArticuloApiService::class)->remove((int) $id);
+
+        if (! $this->handleApiResponse($respuesta, 'Artículo eliminado correctamente.')) {
+            return;
+        }
+
+        $this->dispatch('articulo-actualizado');
     }
 
-    $this->isOpen = false;
-    $this->publicacion = null;
-    $this->dispatch('publicacion-actualizada');
-
-    $mensajes = [
-        'REVISADO'   => 'La publicación se conservó en el catálogo.',
-        'SUSPENDIDO' => 'La publicación fue suspendida temporalmente.',
-        'ELIMINADO'  => 'La publicación fue eliminada del catálogo.',
-    ];
-
-    session()->flash('mensaje', $mensajes[$estado] ?? 'Dictamen aplicado.');
-};
-?>
+    public function cerrar(): void
+    {
+        $this->isOpen = false;
+    }
+}; ?>
 
 <div>
-    @if($isOpen)
+    @if ($isOpen)
     <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 max-w-sm w-full overflow-hidden transform transition-all">
+        <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 max-w-md w-full overflow-hidden">
 
-            @if ($error)
-            <div class="p-6">
-                <div class="bg-red-50 text-red-700 text-sm rounded-xl p-4 font-medium">{{ $error }}</div>
-                <button wire:click="$set('isOpen', false)" class="w-full mt-4 text-xs font-bold text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition">
-                    Cerrar
-                </button>
-            </div>
-            @elseif ($publicacion)
-            <div class="bg-[#D81B60] px-6 pt-6 pb-8 text-center relative">
-                <button wire:click="$set('isOpen', false)" class="absolute top-4 right-4 text-white/80 hover:text-white">
+            <div class="bg-[#D81B60] px-6 py-5 flex items-center justify-between">
+                <h3 class="text-white font-extrabold text-lg">Editar artículo</h3>
+                <button wire:click="cerrar" class="text-white/80 hover:text-white">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                <h3 class="text-white font-extrabold text-lg uppercase tracking-wide">{{ $publicacion['producto'] }}</h3>
-                <p class="text-white/80 text-xs mt-2 px-4">{{ $publicacion['descripcion'] }}</p>
             </div>
 
-            <div class="px-6 -mt-6">
-                <img src="{{ $publicacion['imagen'] }}" alt="{{ $publicacion['producto'] }}" class="w-full h-48 object-cover rounded-2xl shadow-md border border-white">
-            </div>
+            @if ($error)
+            <div class="m-6 bg-red-50 text-red-700 text-sm rounded-xl p-4 font-medium">{{ $error }}</div>
+            @endif
 
-            <div class="p-6 space-y-4">
-                <div class="flex items-center justify-center gap-1">
-                    @php $promedio = round($publicacion['calificacion_promedio'] ?? 0, 1); @endphp
-                    @for ($i = 1; $i <= 5; $i++)
-                        <svg class="w-5 h-5 {{ $i <= round($promedio) ? 'text-amber-400' : 'text-neutral-200' }}" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.921-.755 1.688-1.538 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.783.57-1.838-.197-1.538-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.813 9.384c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.285-3.957z" />
-                        </svg>
-                        @endfor
-                        <span class="text-xs font-bold text-neutral-500 ml-2">{{ $promedio > 0 ? number_format($promedio, 1) : 'Sin reseñas' }}</span>
-                </div>
-
-                <div class="text-xs text-neutral-400 flex items-center gap-2 flex-wrap">
-                    <span class="bg-neutral-100 px-2.5 py-1 rounded-full font-medium text-neutral-600">{{ $publicacion['categoria'] }}</span>
-                    <span>Artesano: {{ $publicacion['artesano'] }}</span>
-                    <span>Tienda: {{ $publicacion['tienda'] }}</span>
-                </div>
-
+            <form wire:submit="guardar" class="p-6 space-y-4">
+                {{-- Nombre --}}
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">Dictamen</label>
-                    <div class="grid grid-cols-3 gap-2.5">
-                        <button wire:click="aplicarDictamen('REVISADO')"
-                            class="flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                            <span class="text-[11px]">Conservar</span>
-                        </button>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre</label>
+                    <input type="text" wire:model="nombre"
+                        class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    @error('nombre') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
+                </div>
 
-                        <button wire:click="aplicarDictamen('SUSPENDIDO')"
-                            class="flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 border-orange-200 bg-orange-50 text-orange-700 font-bold hover:bg-orange-100 transition">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span class="text-[11px]">Suspender</span>
-                        </button>
+                {{-- Descripción --}}
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción</label>
+                    <textarea wire:model="descripcion" rows="3"
+                        class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]"></textarea>
+                    @error('descripcion') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
+                </div>
 
-                        <button
-                            wire:click="aplicarDictamen('ELIMINADO')"
-                            onclick="return confirm('¿Seguro que deseas eliminar esta publicación? Esta acción no se puede deshacer.')"
-                            class="flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 transition">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span class="text-[11px]">Eliminar</span>
-                        </button>
+                <div class="grid grid-cols-2 gap-4">
+                    {{-- Precio --}}
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Precio</label>
+                        <input type="number" step="0.01" min="0" wire:model="precio"
+                            class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                        @error('precio') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
+                    </div>
+
+                    {{-- Stock --}}
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Stock</label>
+                        <input type="number" min="0" wire:model="stock"
+                            class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                        @error('stock') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
                     </div>
                 </div>
-            </div>
-            @endif
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" wire:click="cerrar"
+                        class="flex-1 text-sm font-bold text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="flex-1 text-sm font-bold text-white bg-[#D81B60] hover:bg-[#b0124a] px-4 py-2.5 rounded-xl transition"
+                        wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="guardar">Guardar cambios</span>
+                        <span wire:loading wire:target="guardar">Guardando...</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     @endif
