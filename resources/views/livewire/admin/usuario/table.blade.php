@@ -36,16 +36,27 @@ $dataset = computed(function () {
     try {
         $this->error = null;
 
-        return collect(app(UsuariosDataService::class)->listar($filtros))->map(fn($u) => [
-            'id' => $u['id'],
-            'nombre' => $u['name'],
-            'codigo' => 'UA-' . str_pad($u['id'], 4, '0', STR_PAD_LEFT),
-            'email' => $u['email'],
-            'foto' => null,
-            'rol' => $u['rol'] ?? 'user',
-            'estatus' => $u['estatus'] ?? 'activo',
-            'ingreso' => \Illuminate\Support\Carbon::parse($u['created_at'])->translatedFormat('d M Y'),
-        ]);
+        return collect(app(UsuariosDataService::class)->listar($filtros))->map(function ($u) {
+            // Schema actual de users: nombre / apellido_* (no existe "name")
+            $nombreCompleto = trim(implode(' ', array_filter([
+                $u['nombre'] ?? null,
+                $u['apellido_paterno'] ?? null,
+                $u['apellido_materno'] ?? null,
+            ])));
+
+            return [
+                'id' => $u['id'],
+                'nombre' => $nombreCompleto !== '' ? $nombreCompleto : ($u['email'] ?? 'Sin nombre'),
+                'codigo' => 'UA-' . str_pad((string) $u['id'], 4, '0', STR_PAD_LEFT),
+                'email' => $u['email'] ?? '',
+                'foto' => null,
+                'rol' => $u['rol'] ?? 'user',
+                'estatus' => $u['estatus'] ?? 'activo',
+                'ingreso' => ! empty($u['created_at'])
+                    ? \Illuminate\Support\Carbon::parse($u['created_at'])->translatedFormat('d M Y')
+                    : '—',
+            ];
+        });
     } catch (\RuntimeException $e) {
         $this->error = $e->getMessage();
 

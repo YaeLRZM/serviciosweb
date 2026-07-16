@@ -22,6 +22,18 @@ return Application::configure(basePath: dirname(__DIR__))
             return route('login');
         });
 
+        // Si ya hay sesión y se visita /login (guest), no rebotar a /:
+        // mandar admins al panel; el resto a la landing.
+        $middleware->redirectUsersTo(function () {
+            $user = auth()->user();
+
+            if ($user && method_exists($user, 'hasRole') && $user->hasRole('admin')) {
+                return '/admin/dashboard';
+            }
+
+            return '/';
+        });
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

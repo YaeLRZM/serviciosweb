@@ -1,7 +1,9 @@
 <?php
 
 use App\Livewire\Forms\LoginForm;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -19,9 +21,22 @@ new #[Layout('layouts.auth')] class extends Component
 
         $this->form->authenticate();
 
+        // El panel admin exige rol admin. Sin él: 403 + sesión huérfana
+        // que hace que /login (middleware guest) rebote a / y parezca un bucle.
+        $user = Auth::user();
+        if (! $user || ! $user->hasRole('admin')) {
+            Auth::guard('web')->logout();
+            Session::invalidate();
+            Session::regenerateToken();
+
+            throw ValidationException::withMessages([
+                'form.email' => 'Esta cuenta no tiene acceso de administrador.',
+            ]);
+        }
+
         Session::regenerate();
 
-        $token = JWTAuth::fromUser(auth()->user());
+        $token = JWTAuth::fromUser($user);
         session(['api_token' => $token]);
 
         $this->redirectIntended(default: route('admin.dashboard', absolute: false), navigate: true);
@@ -33,7 +48,7 @@ new #[Layout('layouts.auth')] class extends Component
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100&display=swap');
     </style>
 
-    <div class="absolute inset-0 z-0 bg-cover bg-center blur-[7px] scale-105" style="background-image: url('{{ asset('images/fondoRosa.png') }}');"></div>
+    <div class="absolute inset-0 z-0 bg-cover bg-center blur-[7px] scale-105 pointer-events-none" style="background-image: url('{{ asset('images/fondoRosa.png') }}');"></div>
 
     <div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12">
 
@@ -81,7 +96,8 @@ new #[Layout('layouts.auth')] class extends Component
                     <div class="relative flex items-center">
                         <input wire:model="form.password"
                             id="password"
-                            :type="show ? 'text' : 'password'"
+                            type="password"
+                            x-bind:type="show ? 'text' : 'password'"
                             name="password"
                             required
                             autocomplete="current-password"

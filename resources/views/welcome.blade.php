@@ -65,7 +65,8 @@
             </p>
 
             <div class="w-full flex flex-col gap-5 mt-4">
-                <a href="#"
+                {{-- Empezar e Iniciar Sesión: entrada al flujo de autenticación (guest → login) --}}
+                <a href="{{ route('login') }}"
                     class="w-full py-4 rounded-full bg-[#D81B60] text-white font-semibold tracking-wider hover:bg-[#b51751] transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-[#D81B60]/40 text-center">
                     Empezar
                 </a>
