@@ -13,7 +13,7 @@ class DetalleCampanaController extends Controller
      */
     public function index()
     {
-        //
+        return DetalleCampana::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class DetalleCampanaController extends Controller
      */
     public function store(StoreDetalle_CampanaRequest $request)
     {
-        //
+        $detalleCampana = DetalleCampana::create($request->validated());
+        return response()->json(['message' => 'Detalle de campaña creado correctamente', 'detalleCampana' => $detalleCampana], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class DetalleCampanaController extends Controller
      */
     public function show(DetalleCampana $detalleCampana)
     {
-        //
+        return response()->json(['detalleCampana' => $detalleCampana], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class DetalleCampanaController extends Controller
      */
     public function update(UpdateDetalle_CampanaRequest $request, DetalleCampana $detalleCampana)
     {
-        //
+        $detalleCampana->update($request->validated());
+        return response()->json(['message' => 'Detalle de campaña actualizado correctamente', 'detalleCampana' => $detalleCampana], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class DetalleCampanaController extends Controller
      */
     public function destroy(DetalleCampana $detalleCampana)
     {
-        //
+        $detalleCampana->delete();
+        return response()->json(['message' => 'Detalle de campaña eliminado correctamente'], 200);
     }
 }

@@ -13,7 +13,7 @@ class CuponCanjeadoController extends Controller
      */
     public function index()
     {
-        //
+        return CuponCanjeado::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class CuponCanjeadoController extends Controller
      */
     public function store(StoreCupon_CanjeadoRequest $request)
     {
-        //
+        $cuponCanjeado = CuponCanjeado::create($request->validated());
+        return response()->json(['message' => 'Cupón canjeado creado correctamente', 'cuponCanjeado' => $cuponCanjeado], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class CuponCanjeadoController extends Controller
      */
     public function show(CuponCanjeado $cuponCanjeado)
     {
-        //
+        return response()->json(['cuponCanjeado' => $cuponCanjeado], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class CuponCanjeadoController extends Controller
      */
     public function update(UpdateCupon_CanjeadoRequest $request, CuponCanjeado $cuponCanjeado)
     {
-        //
+        $cuponCanjeado->update($request->validated());
+        return response()->json(['message' => 'Cupón canjeado actualizado correctamente', 'cuponCanjeado' => $cuponCanjeado], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class CuponCanjeadoController extends Controller
      */
     public function destroy(CuponCanjeado $cuponCanjeado)
     {
-        //
+        $cuponCanjeado->delete();
+        return response()->json(['message' => 'Cupón canjeado eliminado correctamente'], 200);
     }
 }

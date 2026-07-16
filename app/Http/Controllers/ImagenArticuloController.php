@@ -13,7 +13,7 @@ class ImagenArticuloController extends Controller
      */
     public function index()
     {
-        //
+        return ImagenArticulo::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class ImagenArticuloController extends Controller
      */
     public function store(StoreImagenArticuloRequest $request)
     {
-        //
+        $imagenArticulo = ImagenArticulo::create($request->validated());
+        return response()->json(['message' => 'Imagen de artículo creada correctamente', 'imagenArticulo' => $imagenArticulo], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class ImagenArticuloController extends Controller
      */
     public function show(ImagenArticulo $imagenArticulo)
     {
-        //
+        return response()->json(['imagenArticulo' => $imagenArticulo], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class ImagenArticuloController extends Controller
      */
     public function update(UpdateImagenArticuloRequest $request, ImagenArticulo $imagenArticulo)
     {
-        //
+        $imagenArticulo->update($request->validated());
+        return response()->json(['message' => 'Imagen de artículo actualizada correctamente', 'imagenArticulo' => $imagenArticulo], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class ImagenArticuloController extends Controller
      */
     public function destroy(ImagenArticulo $imagenArticulo)
     {
-        //
+        $imagenArticulo->delete();
+        return response()->json(['message' => 'Imagen de artículo eliminada correctamente'], 200);
     }
 }

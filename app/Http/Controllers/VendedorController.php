@@ -13,7 +13,7 @@ class VendedorController extends Controller
      */
     public function index()
     {
-        //
+        return Vendedor::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class VendedorController extends Controller
      */
     public function store(StoreVendedorRequest $request)
     {
-        //
+        $vendedor = Vendedor::create($request->validated());
+        return response()->json(['message' => 'Vendedor creado correctamente', 'vendedor' => $vendedor], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class VendedorController extends Controller
      */
     public function show(Vendedor $vendedor)
     {
-        //
+        return $vendedor;
     }
 
     /**
@@ -53,7 +54,8 @@ class VendedorController extends Controller
      */
     public function update(UpdateVendedorRequest $request, Vendedor $vendedor)
     {
-        //
+        $vendedor->update($request->validated());
+        return response()->json(['message' => 'Vendedor actualizado correctamente', 'vendedor' => $vendedor], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class VendedorController extends Controller
      */
     public function destroy(Vendedor $vendedor)
     {
-        //
+        $vendedor->delete();
+        return response()->json(['message' => 'Vendedor eliminado correctamente'], 200);
     }
 }

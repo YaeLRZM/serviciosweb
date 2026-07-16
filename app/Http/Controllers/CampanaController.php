@@ -13,7 +13,7 @@ class CampanaController extends Controller
      */
     public function index()
     {
-        //
+        return Campana::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class CampanaController extends Controller
      */
     public function store(StoreCampanaRequest $request)
     {
-        //
+        $campana = Campana::create($request->validated());
+        return response()->json(['message' => 'Campaña creada correctamente', 'campana' => $campana], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class CampanaController extends Controller
      */
     public function show(Campana $campana)
     {
-        //
+        return response()->json(['campana' => $campana], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class CampanaController extends Controller
      */
     public function update(UpdateCampanaRequest $request, Campana $campana)
     {
-        //
+        $campana->update($request->validated());
+        return response()->json(['message' => 'Campaña actualizada correctamente', 'campana' => $campana], 200);    
     }
 
     /**
@@ -61,6 +63,7 @@ class CampanaController extends Controller
      */
     public function destroy(Campana $campana)
     {
-        //
+        $campana->delete();
+        return response()->json(['message' => 'Campaña eliminada correctamente'], 200);
     }
 }
