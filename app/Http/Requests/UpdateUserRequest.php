@@ -24,7 +24,9 @@ class UpdateUserRequest extends FormRequest
         $usuario = $this->route('usuario');
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'nombre' => ['required', 'string', 'max:255'],
+            'apellido_paterno' => ['required', 'string', 'max:255'],
+            'apellido_materno' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'required',
                 'string',
@@ -33,7 +35,6 @@ class UpdateUserRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($usuario),
             ],
             'password' => ['nullable', 'string', 'min:8'],
-            'estatus' => ['nullable', 'string', Rule::in(['activo', 'suspendido', 'marcado'])],
             'rol' => ['nullable', 'string', Rule::in(['admin', 'user', 'guest'])],
         ];
     }

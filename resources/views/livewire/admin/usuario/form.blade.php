@@ -1,22 +1,18 @@
 <?php
 
 use App\Services\Usuarios\UsuariosDataService;
-use Illuminate\Support\Facades\Schema;
 use function Livewire\Volt\{state, on, rules};
-
-// Schema runtime (pgsql actual no tiene users.estatus)
-$tieneEstatus = Schema::hasColumn('users', 'estatus');
 
 state([
     'isOpen' => false,
     'modo' => 'editar', // 'editar' | 'crear'
     'usuarioId' => null,
     'nombre' => '',
+    'apellido_paterno' => '',
+    'apellido_materno' => '',
     'email' => '',
     'password' => '',
     'rol' => 'user',
-    'estatus' => 'activo',
-    'tieneEstatus' => $tieneEstatus,
 ]);
 
 on(['abrirUsuario' => function ($id) {
@@ -29,12 +25,12 @@ on(['abrirUsuario' => function ($id) {
 
     $this->modo = 'editar';
     $this->usuarioId = $id;
-    // Preferir nombre de pila real; fallback al nombre completo mapeado
-    $this->nombre = $usuario['nombre_raw'] ?? $usuario['nombre'] ?? $usuario['name'] ?? '';
+    $this->nombre = $usuario['nombre_raw'] ?? '';
+    $this->apellido_paterno = $usuario['apellido_paterno'] ?? '';
+    $this->apellido_materno = $usuario['apellido_materno'] ?? '';
     $this->email = $usuario['email'] ?? '';
     $this->password = '';
     $this->rol = $usuario['rol'] ?? 'user';
-    $this->estatus = $usuario['estatus'] ?? 'activo';
     $this->isOpen = true;
 }]);
 
@@ -42,20 +38,24 @@ on(['crearUsuario' => function () {
     $this->modo = 'crear';
     $this->usuarioId = null;
     $this->nombre = '';
+    $this->apellido_paterno = '';
+    $this->apellido_materno = '';
     $this->email = '';
     $this->password = '';
     $this->rol = 'user';
-    $this->estatus = 'activo';
     $this->isOpen = true;
 }]);
 
 rules(fn () => [
     'nombre' => ['required', 'string', 'max:255'],
+    'apellido_paterno' => ['required', 'string', 'max:255'],
+    'apellido_materno' => ['nullable', 'string', 'max:255'],
     'email' => ['required', 'email', 'max:255', $this->modo === 'crear'
         ? \Illuminate\Validation\Rule::unique('users', 'email')
         : \Illuminate\Validation\Rule::unique('users', 'email')->ignore($this->usuarioId),
     ],
     'password' => $this->modo === 'crear' ? ['required', 'string', 'min:8'] : ['nullable', 'string', 'min:8'],
+    'rol' => ['required', 'string', 'in:admin,user,guest'],
 ]);
 
 $guardar = function () {
@@ -64,14 +64,12 @@ $guardar = function () {
     try {
         $payload = [
             'nombre' => $this->nombre,
+            'apellido_paterno' => $this->apellido_paterno,
+            'apellido_materno' => $this->apellido_materno !== '' ? $this->apellido_materno : null,
             'email' => $this->email,
             'password' => $this->password,
             'rol' => $this->rol,
         ];
-        // Solo enviar estatus si la columna existe en la BD runtime
-        if ($this->tieneEstatus) {
-            $payload['estatus'] = $this->estatus;
-        }
 
         if ($this->modo === 'crear') {
             app(UsuariosDataService::class)->crear($payload);
@@ -106,6 +104,19 @@ $guardar = function () {
                 @error('nombre') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
             </div>
 
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Apellido paterno</label>
+                    <input type="text" wire:model="apellido_paterno" class="w-full bg-gray-50 border border-gray-100 rounded-xl text-sm p-3 focus:outline-none focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    @error('apellido_paterno') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Apellido materno <span class="normal-case font-normal">(opcional)</span></label>
+                    <input type="text" wire:model="apellido_materno" class="w-full bg-gray-50 border border-gray-100 rounded-xl text-sm p-3 focus:outline-none focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    @error('apellido_materno') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
             <div>
                 <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Correo electrónico</label>
                 <input type="email" wire:model="email" class="w-full bg-gray-50 border border-gray-100 rounded-xl text-sm p-3 focus:outline-none focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
@@ -127,27 +138,8 @@ $guardar = function () {
                     <option value="user">Usuario</option>
                     <option value="guest">Invitado</option>
                 </select>
+                @error('rol') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
             </div>
-
-            @if ($tieneEstatus)
-            <div>
-                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Estatus</label>
-                <div class="grid grid-cols-3 gap-3">
-                    <button type="button" wire:click="$set('estatus', 'activo')"
-                        class="p-2.5 rounded-xl border-2 text-xs font-semibold transition-all {{ $estatus === 'activo' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-100 text-gray-500 hover:bg-gray-50' }}">
-                        Activo
-                    </button>
-                    <button type="button" wire:click="$set('estatus', 'suspendido')"
-                        class="p-2.5 rounded-xl border-2 text-xs font-semibold transition-all {{ $estatus === 'suspendido' ? 'border-neutral-400 bg-neutral-100 text-neutral-700' : 'border-gray-100 text-gray-500 hover:bg-gray-50' }}">
-                        Suspendido
-                    </button>
-                    <button type="button" wire:click="$set('estatus', 'marcado')"
-                        class="p-2.5 rounded-xl border-2 text-xs font-semibold transition-all {{ $estatus === 'marcado' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-gray-100 text-gray-500 hover:bg-gray-50' }}">
-                        Marcado
-                    </button>
-                </div>
-            </div>
-            @endif
 
             <div class="flex justify-end gap-2.5 pt-2">
                 <button type="button" wire:click="$set('isOpen', false)" class="text-xs font-bold text-gray-500 hover:bg-gray-50 px-4 py-2.5 rounded-xl transition">
