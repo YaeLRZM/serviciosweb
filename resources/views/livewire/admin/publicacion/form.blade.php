@@ -1,21 +1,20 @@
 <?php
 
-use App\Livewire\Concerns\InteractsWithApi;
-use App\Livewire\Concerns\RequiresApiAuth;
-use App\Services\Api\ArticuloApiService;
+use App\Services\Articulos\ArticulosDataService;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 
 new class extends Component {
-    use RequiresApiAuth, InteractsWithApi;
-
     public bool $isOpen = false;
     public ?int $articuloId = null;
 
-    // Campos que pide UpdateArticuloRequest
+    // Campos reales en pgsql articulos (+ stock en inventarios)
     public string $nombre = '';
-    public ?string $descripcion = '';
-    public $precio = null;
+    public string $talla = '';
+    public string $color = '';
+    public string $bordado = '';
+    public string $tela = '';
+    public string $region = '';
     public $stock = null;
 
     public ?string $error = null;
@@ -23,50 +22,58 @@ new class extends Component {
     protected function rules(): array
     {
         return [
-            'nombre'      => ['required', 'string', 'max:255'],
-            'descripcion' => ['nullable', 'string'],
-            'precio'      => ['required', 'numeric', 'min:0'],
-            'stock'       => ['required', 'integer', 'min:0'],
+            'nombre'  => ['required', 'string', 'max:255'],
+            'talla'   => ['nullable', 'string'],
+            'color'   => ['nullable', 'string'],
+            'bordado' => ['nullable', 'string'],
+            'tela'    => ['nullable', 'string'],
+            'region'  => ['nullable', 'string'],
+            'stock'   => ['required', 'integer', 'min:0'],
         ];
     }
 
-    /** Abre el popup de edición y precarga el artículo desde el API. */
+    /** Abre el popup de edición (Eloquent local). */
     #[On('editarArticulo')]
     public function abrir($id): void
     {
         $this->resetValidation();
-        $this->reset(['nombre', 'descripcion', 'precio', 'stock', 'error']);
+        $this->reset(['nombre', 'talla', 'color', 'bordado', 'tela', 'region', 'stock', 'error']);
         $this->articuloId = (int) $id;
 
         try {
-            $respuesta = app(ArticuloApiService::class)->find($this->articuloId);
+            $data = app(ArticulosDataService::class)->find($this->articuloId);
 
-            if (! $respuesta->successful()) {
+            if (! $data) {
                 $this->error = 'No se pudo cargar el artículo.';
                 $this->isOpen = true;
+
                 return;
             }
 
-            $data = $respuesta->json('data', []);
-            $this->nombre      = (string) ($data['nombre'] ?? '');
-            $this->descripcion = $data['descripcion'] ?? '';
-            $this->precio      = $data['precio'] ?? null;
-            $this->stock       = $data['stock'] ?? null;
+            $this->nombre  = (string) ($data['nombre'] ?? '');
+            $this->talla   = (string) ($data['talla'] ?? '');
+            $this->color   = (string) ($data['color'] ?? '');
+            $this->bordado = (string) ($data['bordado'] ?? '');
+            $this->tela    = (string) ($data['tela'] ?? '');
+            $this->region  = (string) ($data['region'] ?? '');
+            $this->stock   = $data['stock'] ?? 0;
         } catch (\Throwable $e) {
-            $this->error = 'No se pudo conectar con el API.';
+            $this->error = 'No se pudo cargar el artículo.';
         }
 
         $this->isOpen = true;
     }
 
-    /** Guarda los cambios llamando a PUT /api/articulos/{id}. */
     public function guardar(): void
     {
         $data = $this->validate();
 
-        $respuesta = app(ArticuloApiService::class)->update($this->articuloId, $data);
+        try {
+            app(ArticulosDataService::class)->actualizar((int) $this->articuloId, $data);
+            session()->flash('success', 'Artículo actualizado correctamente.');
+        } catch (\Throwable $e) {
+            $this->error = 'No se pudo guardar el artículo.';
 
-        if (! $this->handleApiResponse($respuesta, 'Artículo actualizado correctamente.')) {
             return;
         }
 
@@ -74,17 +81,16 @@ new class extends Component {
         $this->dispatch('articulo-actualizado');
     }
 
-    /** Elimina el artículo llamando a DELETE /api/articulos/{id}. */
     #[On('eliminarArticulo')]
     public function eliminar($id): void
     {
-        $respuesta = app(ArticuloApiService::class)->remove((int) $id);
-
-        if (! $this->handleApiResponse($respuesta, 'Artículo eliminado correctamente.')) {
-            return;
+        try {
+            app(ArticulosDataService::class)->eliminar((int) $id);
+            session()->flash('success', 'Artículo eliminado correctamente.');
+            $this->dispatch('articulo-actualizado');
+        } catch (\Throwable $e) {
+            session()->flash('error', 'No se pudo eliminar el artículo.');
         }
-
-        $this->dispatch('articulo-actualizado');
     }
 
     public function cerrar(): void
@@ -111,8 +117,7 @@ new class extends Component {
             <div class="m-6 bg-red-50 text-red-700 text-sm rounded-xl p-4 font-medium">{{ $error }}</div>
             @endif
 
-            <form wire:submit="guardar" class="p-6 space-y-4">
-                {{-- Nombre --}}
+            <form wire:submit="guardar" class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
                     <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nombre</label>
                     <input type="text" wire:model="nombre"
@@ -120,28 +125,43 @@ new class extends Component {
                     @error('nombre') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
                 </div>
 
-                {{-- Descripción --}}
-                <div>
-                    <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Descripción</label>
-                    <textarea wire:model="descripcion" rows="3"
-                        class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]"></textarea>
-                    @error('descripcion') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Talla</label>
+                        <input type="text" wire:model="talla"
+                            class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Color</label>
+                        <input type="text" wire:model="color"
+                            class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    {{-- Precio --}}
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Precio</label>
-                        <input type="number" step="0.01" min="0" wire:model="precio"
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Bordado</label>
+                        <input type="text" wire:model="bordado"
                             class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
-                        @error('precio') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
                     </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tela</label>
+                        <input type="text" wire:model="tela"
+                            class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    </div>
+                </div>
 
-                    {{-- Stock --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Región</label>
+                        <input type="text" wire:model="region"
+                            class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                    </div>
                     <div>
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Stock</label>
                         <input type="number" min="0" wire:model="stock"
                             class="w-full text-sm rounded-xl border-neutral-200 bg-neutral-50 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                        <p class="text-[10px] text-neutral-400 mt-1">inventarios.stock_actual</p>
                         @error('stock') <span class="text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
                     </div>
                 </div>

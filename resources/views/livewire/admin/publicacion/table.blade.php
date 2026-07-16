@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Api\ArticuloApiService;
+use App\Services\Articulos\ArticulosDataService;
 use function Livewire\Volt\{state, computed};
 
 state([
@@ -9,20 +9,16 @@ state([
     'error' => null,
 ]);
 
-// Trae los artículos desde GET /api/articulos (ruta pública)
+// Listado local Eloquent (articulos + relaciones). Sin self-HTTP.
 $dataset = computed(function () {
     try {
-        $respuesta = app(ArticuloApiService::class)->all();
-
-        if (! $respuesta->successful()) {
-            $this->error = 'No se pudieron cargar los artículos desde el API.';
-            return [];
-        }
-
+        $data = app(ArticulosDataService::class)->all();
         $this->error = null;
-        return $respuesta->json('data', []);
+
+        return $data;
     } catch (\Throwable $e) {
-        $this->error = 'No se pudo conectar con el API de artículos.';
+        $this->error = 'No se pudieron cargar los artículos.';
+
         return [];
     }
 });
@@ -33,6 +29,10 @@ $filtered = computed(function () {
     $items = collect($this->dataset)
         ->when($this->busqueda !== '', fn ($q) => $q->filter(
             fn ($item) => str_contains(mb_strtolower($item['nombre'] ?? ''), mb_strtolower($this->busqueda))
+                || str_contains(mb_strtolower($item['categoria']['nombre'] ?? ''), mb_strtolower($this->busqueda))
+                || str_contains(mb_strtolower($item['artesano']['nombre'] ?? ''), mb_strtolower($this->busqueda))
+                || str_contains(mb_strtolower($item['tienda']['nombre'] ?? ''), mb_strtolower($this->busqueda))
+                || str_contains(mb_strtolower($item['region'] ?? ''), mb_strtolower($this->busqueda))
         ))
         ->values();
 
@@ -75,8 +75,8 @@ $irAPagina = function ($p) {
             <input
                 wire:model.live.debounce.400ms="busqueda"
                 type="text"
-                placeholder="Buscar por nombre..."
-                class="text-sm rounded-xl border-neutral-200 bg-neutral-50 pl-9 pr-3 py-2 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60]" />
+                placeholder="Buscar por nombre, categoría, artesano, tienda o región..."
+                class="text-sm rounded-xl border-neutral-200 bg-neutral-50 pl-9 pr-3 py-2 focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] min-w-[280px]" />
             <svg class="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -109,7 +109,7 @@ $irAPagina = function ($p) {
                     <th class="px-5 py-3">Categoría</th>
                     <th class="px-5 py-3">Artesano</th>
                     <th class="px-5 py-3">Tienda</th>
-                    <th class="px-5 py-3">Precio</th>
+                    <th class="px-5 py-3">Región</th>
                     <th class="px-5 py-3">Stock</th>
                     <th class="px-5 py-3 text-right">Acciones</th>
                 </tr>
@@ -135,7 +135,7 @@ $irAPagina = function ($p) {
                     </td>
                     <td class="px-5 py-3 text-neutral-600">{{ $item['artesano']['nombre'] ?? '—' }}</td>
                     <td class="px-5 py-3 text-neutral-500">{{ $item['tienda']['nombre'] ?? '—' }}</td>
-                    <td class="px-5 py-3 font-medium text-neutral-700">${{ number_format((float) ($item['precio'] ?? 0), 2) }}</td>
+                    <td class="px-5 py-3 text-neutral-500">{{ $item['region'] ?: '—' }}</td>
                     <td class="px-5 py-3">
                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ (int) ($item['stock'] ?? 0) > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
                             {{ $item['stock'] ?? 0 }}
@@ -143,7 +143,6 @@ $irAPagina = function ($p) {
                     </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-2">
-                            {{-- Editar: abre el popup --}}
                             <button
                                 wire:click="$dispatch('editarArticulo', { id: {{ $item['id'] }} })"
                                 class="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-[#D81B60]/10 text-[#D81B60] hover:bg-[#D81B60] hover:text-white transition"
@@ -154,7 +153,6 @@ $irAPagina = function ($p) {
                                 Editar
                             </button>
 
-                            {{-- Eliminar: confirma y llama al destroy del API --}}
                             <button
                                 wire:click="$dispatch('eliminarArticulo', { id: {{ $item['id'] }} })"
                                 wire:confirm="¿Seguro que deseas eliminar este artículo? Esta acción no se puede deshacer."

@@ -1,6 +1,6 @@
 <x-admin-layout>
     <x-slot name="header">
-        Moderación de publicaciones
+        Publicaciones / Artículos
     </x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6">

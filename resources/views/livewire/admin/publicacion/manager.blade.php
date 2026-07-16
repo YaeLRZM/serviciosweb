@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Api\ArticuloApiService;
+use App\Services\Articulos\ArticulosDataService;
 use function Livewire\Volt\{state, computed};
 
 state([
@@ -9,19 +9,19 @@ state([
 
 $stats = computed(function () {
     try {
-        $respuesta = app(ArticuloApiService::class)->all();
-        $items = collect($respuesta->successful() ? $respuesta->json('data', []) : []);
-        $this->error = $respuesta->successful() ? null : 'No se pudieron cargar las estadísticas de artículos.';
+        $stats = app(ArticulosDataService::class)->stats();
+        $this->error = null;
+
+        return $stats;
     } catch (\Throwable $e) {
         $this->error = 'No se pudieron cargar las estadísticas de artículos.';
-        $items = collect();
-    }
 
-    return [
-        'total'    => $items->count(),
-        'en_stock' => $items->filter(fn ($i) => (int) ($i['stock'] ?? 0) > 0)->count(),
-        'agotados' => $items->filter(fn ($i) => (int) ($i['stock'] ?? 0) === 0)->count(),
-    ];
+        return [
+            'total' => 0,
+            'en_stock' => 0,
+            'agotados' => 0,
+        ];
+    }
 });
 ?>
 
