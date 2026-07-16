@@ -50,12 +50,11 @@ $dataset = computed(function () {
         // Fuente real: UsuariosDataService::listar (users + roles Spatie).
         return collect(app(UsuariosDataService::class)->listar($filtros))->map(fn ($u) => [
             'id' => $u['id'],
-            'nombre' => $u['nombre'],
+            'nombre' => $u['nombre'], // nombre completo mapeado (nombre + apellidos)
             'codigo' => 'UA-' . str_pad((string) $u['id'], 4, '0', STR_PAD_LEFT),
             'email' => $u['email'] ?? '',
             'foto' => null,
             'rol' => $u['rol'] ?? 'sin_rol',
-            'estatus' => $u['estatus'] ?? 'activo',
             'ingreso' => ! empty($u['created_at'])
                 ? \Illuminate\Support\Carbon::parse($u['created_at'])->translatedFormat('d M Y')
                 : '—',
@@ -193,7 +192,7 @@ $eliminar = function ($id) {
             </thead>
             <tbody class="divide-y divide-neutral-100">
                 @forelse ($this->filtered['items'] as $item)
-                <tr class="hover:bg-neutral-50/60 transition {{ ($tieneEstatus && $item['estatus'] === 'suspendido') ? 'opacity-70' : '' }}">
+                <tr class="hover:bg-neutral-50/60 transition {{ ($tieneEstatus && ($item['estatus'] ?? '') === 'suspendido') ? 'opacity-70' : '' }}">
                     <td class="px-5 py-4">
                         <div class="flex items-center gap-3">
                             @if ($item['foto'])

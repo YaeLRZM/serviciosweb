@@ -4,48 +4,33 @@ namespace App\Services\Usuarios;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class UsuariosDataService
 {
     /**
-     * Listado real de users + roles (Spatie), con filtros opcionales.
-     * Devuelve arrays listos para la vista admin (sin mocks).
+     * Listado real: users (schema actual) + roles Spatie.
+     *
+     * Columnas users: nombre, apellido_paterno, apellido_materno, email, password, timestamps.
+     * Sin columnas name ni estatus.
      */
     public function listar(array $filtros = []): array
     {
         $query = User::query()->with('roles');
 
         if (! empty($filtros['rol'])) {
+            // `name` aquí es roles.name (Spatie), no users.name
             $query->whereHas('roles', fn ($q) => $q->where('name', $filtros['rol']));
-        }
-
-        // Columna opcional: solo filtrar si existe en el schema actual.
-        if (! empty($filtros['estatus']) && Schema::hasColumn('users', 'estatus')) {
-            $query->where('estatus', $filtros['estatus']);
         }
 
         if (! empty($filtros['busqueda'])) {
             $busqueda = $filtros['busqueda'];
-            // PostgreSQL: ILIKE = LIKE case-insensitive. SQLite/MySQL fallback: LIKE (sqlite LIKE ya es CI).
             $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
 
             $query->where(function ($q) use ($busqueda, $like) {
-                // Schema Laravel clásico: name
-                if (Schema::hasColumn('users', 'name')) {
-                    $q->where('name', $like, "%{$busqueda}%");
-                }
-                // Schema extendido: nombre + apellidos
-                if (Schema::hasColumn('users', 'nombre')) {
-                    $q->orWhere('nombre', $like, "%{$busqueda}%");
-                }
-                if (Schema::hasColumn('users', 'apellido_paterno')) {
-                    $q->orWhere('apellido_paterno', $like, "%{$busqueda}%");
-                }
-                if (Schema::hasColumn('users', 'apellido_materno')) {
-                    $q->orWhere('apellido_materno', $like, "%{$busqueda}%");
-                }
-                $q->orWhere('email', $like, "%{$busqueda}%");
+                $q->where('nombre', $like, "%{$busqueda}%")
+                    ->orWhere('apellido_paterno', $like, "%{$busqueda}%")
+                    ->orWhere('apellido_materno', $like, "%{$busqueda}%")
+                    ->orWhere('email', $like, "%{$busqueda}%");
             });
         }
 
@@ -62,7 +47,6 @@ class UsuariosDataService
 
         $data = $this->normalizarCamposEscritura($data);
 
-        // forceFill: el fillable del modelo puede no listar "name" o "nombre" según rama/schema.
         $usuario = new User;
         $usuario->forceFill($data)->save();
         $usuario->assignRole($rol);
@@ -77,9 +61,6 @@ class UsuariosDataService
         return $usuario ? $this->mapearParaVista($usuario) : null;
     }
 
-    /**
-     * @throws \RuntimeException si la actualización falla
-     */
     public function actualizar(int $id, array $data): array
     {
         $usuario = User::findOrFail($id);
@@ -108,80 +89,51 @@ class UsuariosDataService
     }
 
     /**
-     * Normaliza un User de BD a la forma que usa la vista admin.
-     * Compatible con schema `name` (pgsql clásico) o `nombre`+apellidos.
+     * @return array{
+     *   id:int,
+     *   nombre:string,
+     *   nombre_raw:?string,
+     *   apellido_paterno:?string,
+     *   apellido_materno:?string,
+     *   email:string,
+     *   rol:?string,
+     *   created_at:?string
+     * }
      */
     protected function mapearParaVista(User $user): array
     {
-        $partes = [];
-
-        if (Schema::hasColumn('users', 'nombre') || filled($user->nombre ?? null)) {
-            $partes = array_filter([
-                $user->nombre ?? null,
-                $user->apellido_paterno ?? null,
-                $user->apellido_materno ?? null,
-            ], fn ($v) => filled($v));
-        }
-
-        $nombreCompleto = trim(implode(' ', $partes));
-
-        // Fallback schema clásico Laravel: columna `name`
-        if ($nombreCompleto === '' && filled($user->name ?? null)) {
-            $nombreCompleto = (string) $user->name;
-        }
-
-        if ($nombreCompleto === '') {
-            $nombreCompleto = (string) $user->email;
-        }
-
-        // Rol real Spatie (eager-loaded). Null si no tiene roles.
         $rol = $user->roles->first()?->name
             ?? $user->getRoleNames()->first();
 
-        // Convención mínima si no hay columna/valor estatus.
-        $estatus = Schema::hasColumn('users', 'estatus')
-            ? (string) ($user->estatus ?: 'activo')
-            : 'activo';
-
         return [
             'id' => (int) $user->id,
-            'nombre' => $nombreCompleto,
-            'nombre_raw' => $user->nombre ?? $user->name ?? null,
-            'apellido_paterno' => $user->apellido_paterno ?? null,
-            'apellido_materno' => $user->apellido_materno ?? null,
+            // Nombre completo centralizado en User::nombre_completo
+            'nombre' => $user->nombre_completo,
+            'nombre_raw' => filled($user->nombre) ? (string) $user->nombre : null,
+            'apellido_paterno' => filled($user->apellido_paterno) ? (string) $user->apellido_paterno : null,
+            'apellido_materno' => filled($user->apellido_materno) ? (string) $user->apellido_materno : null,
             'email' => (string) $user->email,
             'rol' => $rol,
-            'estatus' => $estatus,
             'created_at' => $user->created_at?->toIso8601String(),
-            // Alias defensivo
-            'name' => $nombreCompleto,
         ];
     }
 
     /**
-     * Ajusta payload de escritura al schema real (name vs nombre).
+     * Solo columnas reales de escritura en users.
      */
     protected function normalizarCamposEscritura(array $data): array
     {
-        $valorNombre = $data['nombre'] ?? $data['name'] ?? null;
-
-        if (Schema::hasColumn('users', 'name')) {
-            if ($valorNombre !== null) {
-                $data['name'] = $valorNombre;
-            }
-            unset($data['nombre'], $data['apellido_paterno'], $data['apellido_materno']);
-        } elseif (Schema::hasColumn('users', 'nombre')) {
-            if ($valorNombre !== null) {
-                $data['nombre'] = $valorNombre;
-            }
-            unset($data['name']);
+        if (array_key_exists('apellido_materno', $data) && $data['apellido_materno'] === '') {
+            $data['apellido_materno'] = null;
         }
 
-        // No escribir columnas que no existen en el schema runtime (pgsql actual sin estatus).
-        if (array_key_exists('estatus', $data) && ! Schema::hasColumn('users', 'estatus')) {
-            unset($data['estatus']);
-        }
-
-        return $data;
+        return array_intersect_key($data, array_flip([
+            'nombre',
+            'apellido_paterno',
+            'apellido_materno',
+            'email',
+            'password',
+            'email_verified_at',
+        ]));
     }
 }

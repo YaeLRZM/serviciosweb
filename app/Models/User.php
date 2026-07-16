@@ -26,7 +26,7 @@ class User extends Authenticatable implements JWTSubject
         'apellido_materno',
         'email',
         'password',
-        'estatus',
+        // Nota: no hay columna `name` ni `estatus` en users (schema actual pgsql).
     ];
 
     /**
@@ -49,6 +49,23 @@ class User extends Authenticatable implements JWTSubject
     public function getRolAttribute(): ?string
     {
         return $this->getRoleNames()->first();
+    }
+
+    /**
+     * Nombre completo: nombre + apellido_paterno + apellido_materno (nullable).
+     * Fallback a email si no hay partes.
+     */
+    public function getNombreCompletoAttribute(): string
+    {
+        $partes = array_filter([
+            filled($this->nombre) ? (string) $this->nombre : null,
+            filled($this->apellido_paterno) ? (string) $this->apellido_paterno : null,
+            filled($this->apellido_materno) ? (string) $this->apellido_materno : null,
+        ]);
+
+        $completo = trim(implode(' ', $partes));
+
+        return $completo !== '' ? $completo : (string) $this->email;
     }
 
     /**
