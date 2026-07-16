@@ -8,9 +8,7 @@
     <div class="flex-1 min-w-0">
         <h4 class="text-sm font-bold text-[#D81B60] truncate">{{ $vendedor['tienda'] ?? 'Sin tienda' }}</h4>
         <p class="text-xs text-neutral-400 mb-1 truncate">Prop: {{ $vendedor['propietario'] ?? '—' }}</p>
-        @if (! empty($vendedor['reportado']))
-        <p class="text-[10px] font-bold text-rose-600 mb-1.5">Reportado</p>
-        @endif
+        <p class="text-[10px] text-neutral-500 mb-1.5 truncate">{{ ucfirst($vendedor['estatus'] ?? '') }} · {{ $vendedor['codigo_ine'] ?? '' }}</p>
         <button
             type="button"
             wire:click="$dispatch('abrirVendedor', { id: {{ (int) ($vendedor['id'] ?? 0) }} })"

@@ -30,4 +30,9 @@ class Tienda extends Model
     {
         return $this->hasMany(Cupon::class);
     }
+
+    public function vendedors()
+    {
+        return $this->hasMany(Vendedor::class);
+    }
 }

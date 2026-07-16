@@ -7,7 +7,6 @@ state([
     'isOpen' => false,
     'vendedorId' => null,
     'vendedor' => null,
-    'notas' => '',
     'error' => null,
     'procesando' => false,
 ]);
@@ -15,7 +14,6 @@ state([
 on(['abrirVendedor' => function ($id) {
     $this->vendedorId = (int) $id;
     $this->error = null;
-    $this->notas = '';
     $this->procesando = false;
 
     try {
@@ -23,8 +21,6 @@ on(['abrirVendedor' => function ($id) {
 
         if (! $this->vendedor) {
             $this->error = 'No se encontró el vendedor solicitado.';
-        } else {
-            $this->notas = $this->vendedor['notas'] ?? '';
         }
     } catch (\Throwable $e) {
         $this->error = 'No se pudo cargar el detalle del vendedor.';
@@ -39,14 +35,12 @@ $cerrar = function () {
     $this->vendedor = null;
     $this->vendedorId = null;
     $this->error = null;
-    $this->notas = '';
     $this->procesando = false;
 };
 
 /**
- * Acepta o rechaza la solicitud / actualiza estatus.
- * Aceptar  → Verificado
- * Rechazar → Rechazado
+ * Aceptar → activo | Rechazar/desactivar → inactivo
+ * (valores reales en PostgreSQL)
  */
 $aplicarDictamen = function (string $accion) {
     if (! $this->vendedorId || $this->procesando) {
@@ -54,8 +48,8 @@ $aplicarDictamen = function (string $accion) {
     }
 
     $estatus = match ($accion) {
-        'aceptar' => 'Verificado',
-        'rechazar' => 'Rechazado',
+        'aceptar' => 'activo',
+        'rechazar' => 'inactivo',
         default => null,
     };
 
@@ -82,11 +76,11 @@ $aplicarDictamen = function (string $accion) {
     $this->dispatch('vendedor-actualizado');
 
     $mensajes = [
-        'Verificado' => 'Solicitud aceptada. El vendedor quedó verificado.',
-        'Rechazado' => 'Solicitud rechazada.',
+        'activo' => 'Vendedor marcado como activo.',
+        'inactivo' => 'Vendedor marcado como inactivo.',
     ];
 
-    session()->flash('mensaje', $mensajes[$estatus] ?? 'Dictamen aplicado.');
+    session()->flash('mensaje', $mensajes[$estatus] ?? 'Estatus actualizado.');
 };
 ?>
 
@@ -124,15 +118,9 @@ $aplicarDictamen = function (string $accion) {
                     class="w-16 h-16 rounded-2xl object-cover border border-neutral-200 shrink-0" />
                 <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold text-neutral-900 truncate">{{ $vendedor['propietario'] }}</p>
-                    <p class="text-xs text-neutral-400 mt-0.5">{{ $vendedor['email'] ?: 'Sin correo' }}</p>
+                    <p class="text-xs text-neutral-400 mt-0.5">{{ $vendedor['email'] ?: 'Sin email' }}</p>
                     <div class="flex flex-wrap items-center gap-2 mt-2">
-                        <span class="text-[11px] font-medium bg-neutral-100 text-neutral-600 px-2.5 py-1 rounded-full">
-                            {{ $vendedor['categoria'] }}
-                        </span>
                         <span class="text-[11px] text-neutral-400">Ingreso: {{ $vendedor['ingreso'] }}</span>
-                        @if (! empty($vendedor['reportado']))
-                        <span class="text-[11px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">Reportado</span>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -140,7 +128,7 @@ $aplicarDictamen = function (string $accion) {
             <div class="grid grid-cols-2 gap-3 text-xs">
                 <div class="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Estatus actual</p>
-                    <p class="font-semibold text-neutral-800">{{ $vendedor['estatus'] }}</p>
+                    <p class="font-semibold text-neutral-800">{{ ucfirst($vendedor['estatus']) }}</p>
                 </div>
                 <div class="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">Código INE</p>
@@ -150,28 +138,19 @@ $aplicarDictamen = function (string $accion) {
                 </div>
             </div>
 
-            @if ($vendedor['foto_frontal_ine'] || $vendedor['foto_trasera_ine'])
+            @if (! empty($vendedor['foto_frontal_ine_link']) || ! empty($vendedor['foto_trasera_ine_link']))
             <div>
-                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Documentación</p>
+                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Documentación INE</p>
                 <div class="grid grid-cols-2 gap-2">
-                    @if ($vendedor['foto_frontal_ine'])
-                    <img src="{{ $vendedor['foto_frontal_ine'] }}" alt="INE frontal" class="w-full h-24 object-cover rounded-xl border border-neutral-100" />
+                    @if (! empty($vendedor['foto_frontal_ine_link']))
+                    <img src="{{ $vendedor['foto_frontal_ine_link'] }}" alt="INE frontal" class="w-full h-24 object-cover rounded-xl border border-neutral-100" />
                     @endif
-                    @if ($vendedor['foto_trasera_ine'])
-                    <img src="{{ $vendedor['foto_trasera_ine'] }}" alt="INE reverso" class="w-full h-24 object-cover rounded-xl border border-neutral-100" />
+                    @if (! empty($vendedor['foto_trasera_ine_link']))
+                    <img src="{{ $vendedor['foto_trasera_ine_link'] }}" alt="INE reverso" class="w-full h-24 object-cover rounded-xl border border-neutral-100" />
                     @endif
                 </div>
             </div>
             @endif
-
-            <div>
-                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Notas internas</label>
-                <textarea
-                    wire:model="notas"
-                    rows="3"
-                    placeholder="Escribe el motivo del dictamen..."
-                    class="w-full bg-gray-50 border border-gray-100 rounded-xl text-sm p-3 focus:outline-none focus:ring-2 focus:ring-[#D81B60]/20 focus:border-[#D81B60] placeholder-gray-400 transition-all"></textarea>
-            </div>
 
             <div>
                 <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">Dictamen</label>
@@ -186,13 +165,13 @@ $aplicarDictamen = function (string $accion) {
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
-                        <span class="text-xs">Aceptar</span>
+                        <span class="text-xs">Activar</span>
                     </button>
 
                     <button
                         type="button"
                         wire:click="aplicarDictamen('rechazar')"
-                        wire:confirm="¿Rechazar esta solicitud de vendedor?"
+                        wire:confirm="¿Marcar este vendedor como inactivo?"
                         wire:loading.attr="disabled"
                         wire:target="aplicarDictamen"
                         @disabled($procesando)
@@ -200,7 +179,7 @@ $aplicarDictamen = function (string $accion) {
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 105.636 5.636a9 9 0 0012.728 12.728zM6 6l12 12" />
                         </svg>
-                        <span class="text-xs">Rechazar</span>
+                        <span class="text-xs">Desactivar</span>
                     </button>
                 </div>
             </div>

@@ -23,7 +23,9 @@ class VendedorResource extends JsonResource
 
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
-                'correo' => $this->user->correo,
+                'email' => $this->user->email,
+                'nombre' => $this->user->nombre ?? null,
+                'nombre_completo' => $this->user->nombre_completo ?? null,
             ]),
         ];
     }

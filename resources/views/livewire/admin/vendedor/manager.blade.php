@@ -19,9 +19,8 @@ $stats = computed(function () {
 
         return [
             'total' => 0,
-            'pendientes' => 0,
-            'marcados' => 0,
-            'activas' => 0,
+            'inactivos' => 0,
+            'activos' => 0,
         ];
     }
 });
@@ -32,7 +31,7 @@ $colaVerificacion = computed(function () {
             ->take(3)
             ->values();
     } catch (\Throwable $e) {
-        $this->error = 'No se pudieron cargar las solicitudes pendientes.';
+        $this->error = 'No se pudieron cargar los vendedores inactivos.';
 
         return collect();
     }
@@ -68,8 +67,8 @@ $revisarSolicitud = function (int $id) {
     </div>
     @endif
 
-    {{-- Estadísticas --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {{-- Estadísticas reales (activo / inactivo) --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <x-admin.stat-mini-card
             label="Vendedores Totales"
             :value="number_format($this->stats['total'])"
@@ -84,9 +83,9 @@ $revisarSolicitud = function (int $id) {
         </x-admin.stat-mini-card>
 
         <x-admin.stat-mini-card
-            label="Solicitudes Pendientes"
-            :value="$this->stats['pendientes']"
-            trend="Requieren revisión inmediata"
+            label="Inactivos"
+            :value="$this->stats['inactivos']"
+            trend="Estatus inactivo en BD"
             icon-bg="bg-amber-100"
             icon-color="text-amber-500"
             border-color="border-amber-500">
@@ -96,22 +95,9 @@ $revisarSolicitud = function (int $id) {
         </x-admin.stat-mini-card>
 
         <x-admin.stat-mini-card
-            label="Vendedores Marcados"
-            :value="$this->stats['marcados']"
-            trend="Suspendidos o con reportes"
-            trend-color="text-rose-500"
-            icon-bg="bg-rose-100"
-            icon-color="text-rose-500"
-            border-color="border-rose-500">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h1.5V16.5h9l-.75-3 .75-3h-9V3H3z" />
-            </svg>
-        </x-admin.stat-mini-card>
-
-        <x-admin.stat-mini-card
-            label="Tiendas Activas"
-            :value="number_format($this->stats['activas'])"
-            trend="Operando actualmente"
+            label="Activos"
+            :value="number_format($this->stats['activos'])"
+            trend="Estatus activo en BD"
             icon-bg="bg-emerald-100"
             icon-color="text-emerald-500"
             border-color="border-emerald-500">
@@ -124,18 +110,18 @@ $revisarSolicitud = function (int $id) {
     {{-- Cola de verificación --}}
     <section>
         <div class="flex items-center justify-between mb-4 gap-3">
-            <h3 class="font-cormorant text-2xl text-neutral-900">Cola de Verificación</h3>
+            <h3 class="font-cormorant text-2xl text-neutral-900">Vendedores inactivos</h3>
             <button
                 type="button"
                 wire:click="abrirSolicitudes"
                 class="text-sm font-semibold text-[#D81B60] hover:underline shrink-0">
-                Ver todas las solicitudes
+                Ver todos los inactivos
             </button>
         </div>
 
         @if ($this->colaVerificacion->isEmpty())
         <div class="bg-white rounded-2xl border border-dashed border-neutral-200 px-5 py-8 text-center">
-            <p class="text-sm text-neutral-400">No hay solicitudes pendientes por revisar.</p>
+            <p class="text-sm text-neutral-400">No hay vendedores inactivos.</p>
         </div>
         @else
         <div class="flex gap-4 overflow-x-auto pb-2">
@@ -152,7 +138,7 @@ $revisarSolicitud = function (int $id) {
     <livewire:admin.vendedor.form />
 
     {{-- Modal: todas las solicitudes --}}
-    <x-modal :show="$modalSolicitudes" maxWidth="2xl" title="Solicitudes para ser vendedor" subtitle="Revisa y dictamina cada solicitud pendiente">
+    <x-modal :show="$modalSolicitudes" maxWidth="2xl" title="Vendedores inactivos" subtitle="Revisa y activa o desactiva cada registro">
         <x-slot name="closeButton">
             <button type="button" wire:click="cerrarSolicitudes" class="text-neutral-400 hover:text-neutral-600 transition">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -163,7 +149,7 @@ $revisarSolicitud = function (int $id) {
 
         @if ($this->todasSolicitudes->isEmpty())
         <div class="py-10 text-center">
-            <p class="text-sm text-neutral-400">No hay solicitudes pendientes en este momento.</p>
+            <p class="text-sm text-neutral-400">No hay vendedores inactivos en este momento.</p>
         </div>
         @else
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -176,10 +162,8 @@ $revisarSolicitud = function (int $id) {
                 <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-bold text-[#D81B60] truncate">{{ $solicitud['tienda'] }}</h4>
                     <p class="text-xs text-neutral-400 truncate">Prop: {{ $solicitud['propietario'] }}</p>
-                    <p class="text-[11px] text-neutral-400 mt-0.5 truncate">{{ $solicitud['categoria'] }} · {{ $solicitud['ingreso'] }}</p>
-                    @if (! empty($solicitud['reportado']))
-                    <span class="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide text-rose-600">Reportado</span>
-                    @endif
+                    <p class="text-[11px] text-neutral-400 mt-0.5 truncate">{{ $solicitud['email'] }} · {{ $solicitud['ingreso'] }}</p>
+                    <p class="text-[11px] text-neutral-500 mt-0.5 font-mono truncate">{{ $solicitud['codigo_ine'] }}</p>
                 </div>
                 <button
                     type="button"

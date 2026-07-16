@@ -2,6 +2,6 @@
 
 return [
     'mock_publicaciones' => env('MOCK_PUBLICACIONES', true),
-    // true = datos de sesión/mock; false = GET/PATCH /vendedores vía ApiClient
-    'mock_vendedores' => env('MOCK_VENDEDORES', true),
+    // Histórico: mock de vendedores. El admin ya usa Eloquent (vendedors). Flag sin efecto.
+    'mock_vendedores' => env('MOCK_VENDEDORES', false),
 ];
