@@ -20,6 +20,6 @@ class Inventario extends Model
     }
     public function detalle_inventarios()
     {
-        return $this->hasMany(Detalle_Inventario::class);
+        return $this->hasMany(DetalleInventario::class);
     }
 }

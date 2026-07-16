@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCupon_CanjeadoRequest;
-use App\Http\Requests\UpdateCupon_CanjeadoRequest;
+use App\Http\Requests\StoreCuponCanjeadoRequest;
+use App\Http\Requests\UpdateCuponCanjeadoRequest;
 use App\Models\CuponCanjeado;
 
 class CuponCanjeadoController extends Controller
@@ -27,7 +27,7 @@ class CuponCanjeadoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCupon_CanjeadoRequest $request)
+    public function store(StoreCuponCanjeadoRequest $request)
     {
         $cuponCanjeado = CuponCanjeado::create($request->validated());
         return response()->json(['message' => 'Cupón canjeado creado correctamente', 'cuponCanjeado' => $cuponCanjeado], 201);
@@ -52,7 +52,7 @@ class CuponCanjeadoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCupon_CanjeadoRequest $request, CuponCanjeado $cuponCanjeado)
+    public function update(UpdateCuponCanjeadoRequest $request, CuponCanjeado $cuponCanjeado)
     {
         $cuponCanjeado->update($request->validated());
         return response()->json(['message' => 'Cupón canjeado actualizado correctamente', 'cuponCanjeado' => $cuponCanjeado], 200);

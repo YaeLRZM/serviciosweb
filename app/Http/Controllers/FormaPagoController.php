@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreForma_PagoRequest;
-use App\Http\Requests\UpdateForma_PagoRequest;
+use App\Http\Requests\StoreFormaPagoRequest;
+use App\Http\Requests\UpdateFormaPagoRequest;
 use App\Models\FormaPago;
 
 class FormaPagoController extends Controller
@@ -27,7 +27,7 @@ class FormaPagoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreForma_PagoRequest $request)
+    public function store(StoreFormaPagoRequest $request)
     {
         FormaPago::create($request->validated());
         return response()->json(['message' => 'Forma de pago creada correctamente', 'forma_pago' => $request->validated()]);
@@ -52,7 +52,7 @@ class FormaPagoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateForma_PagoRequest $request, FormaPago $formaPago)
+    public function update(UpdateFormaPagoRequest $request, FormaPago $formaPago)
     {
         $formaPago->update($request->validated());
         return response()->json(['message' => 'Forma de pago actualizada correctamente', 'forma_pago' => $formaPago]);

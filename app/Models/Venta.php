@@ -32,11 +32,11 @@ class Venta extends Model
     }
     public function detalle_ventas()
     {
-        return $this->hasMany(Detalle_Venta::class);
+        return $this->hasMany(DetalleVenta::class);
     }
     public function detalle_inventarios()
     {
-        return $this->hasMany(Detalle_Inventario::class);
+        return $this->hasMany(DetalleInventario::class);
     }
     public function envio()
     {
