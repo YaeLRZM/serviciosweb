@@ -12,7 +12,7 @@ class StoreArticuloRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('crearArticulos') ?? false;
     }
 
     /**
