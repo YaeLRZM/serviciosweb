@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\Detalle_Inventario;
+use App\Models\DetalleInventario;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
@@ -19,7 +19,7 @@ class DetalleInventarioPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Detalle_Inventario $detalleInventario): bool
+    public function view(User $user, DetalleInventario $detalleInventario): bool
     {
         return false;
     }
@@ -35,7 +35,7 @@ class DetalleInventarioPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Detalle_Inventario $detalleInventario): bool
+    public function update(User $user, DetalleInventario $detalleInventario): bool
     {
         return false;
     }
@@ -43,7 +43,7 @@ class DetalleInventarioPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Detalle_Inventario $detalleInventario): bool
+    public function delete(User $user, DetalleInventario $detalleInventario): bool
     {
         return false;
     }
@@ -51,7 +51,7 @@ class DetalleInventarioPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Detalle_Inventario $detalleInventario): bool
+    public function restore(User $user, DetalleInventario $detalleInventario): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class DetalleInventarioPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Detalle_Inventario $detalleInventario): bool
+    public function forceDelete(User $user, DetalleInventario $detalleInventario): bool
     {
         return false;
     }

@@ -12,7 +12,7 @@ class UpdateArtesanoRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('editarArtesanos') ?? false;
     }
 
     /**
@@ -23,7 +23,7 @@ class UpdateArtesanoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nombre' => 'sometimes|string|max:255',
         ];
     }
 }

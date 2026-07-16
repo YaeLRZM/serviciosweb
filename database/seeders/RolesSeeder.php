@@ -17,11 +17,23 @@ class RolesSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
-            // ARTICULOS
+            // ARTICULOS 
             'verArticulos',
             'crearArticulos',
             'editarArticulos',
             'eliminarArticulos',
+            // CATEGORIAS 
+            'crearCategorias',
+            'editarCategorias',
+            'eliminarCategorias',
+            // ARTESANOS 
+            'crearArtesanos',
+            'editarArtesanos',
+            'eliminarArtesanos',
+            // TIENDAS 
+            'crearTiendas',
+            'editarTiendas',
+            'eliminarTiendas',
             // RESEÑAS
             'verResenas',
             'crearResenas',

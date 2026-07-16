@@ -13,7 +13,7 @@ class CuponController extends Controller
      */
     public function index()
     {
-        //
+        return Cupon::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class CuponController extends Controller
      */
     public function store(StoreCuponRequest $request)
     {
-        //
+        $cupon = Cupon::create($request->validated());
+        return response()->json(['message' => 'Cupón creado correctamente', 'cupon' => $cupon], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class CuponController extends Controller
      */
     public function show(Cupon $cupon)
     {
-        //
+        return response()->json(['cupon' => $cupon], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class CuponController extends Controller
      */
     public function update(UpdateCuponRequest $request, Cupon $cupon)
     {
-        //
+        $cupon->update($request->validated());
+        return response()->json(['message' => 'Cupón actualizado correctamente', 'cupon' => $cupon], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class CuponController extends Controller
      */
     public function destroy(Cupon $cupon)
     {
-        //
+        $cupon->delete();
+        return response()->json(['message' => 'Cupón eliminado correctamente'], 200);
     }
 }

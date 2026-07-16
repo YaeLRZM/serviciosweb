@@ -13,7 +13,7 @@ class EnvioController extends Controller
      */
     public function index()
     {
-        //
+        return Envio::all();
     }
 
     /**
@@ -29,7 +29,8 @@ class EnvioController extends Controller
      */
     public function store(StoreEnvioRequest $request)
     {
-        //
+        $envio = Envio::create($request->validated());
+        return response()->json(['message' => 'Envío creado correctamente', 'envio' => $envio], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class EnvioController extends Controller
      */
     public function show(Envio $envio)
     {
-        //
+        return response()->json(['envio' => $envio], 200);
     }
 
     /**
@@ -53,7 +54,8 @@ class EnvioController extends Controller
      */
     public function update(UpdateEnvioRequest $request, Envio $envio)
     {
-        //
+        $envio->update($request->validated());
+        return response()->json(['message' => 'Envío actualizado correctamente', 'envio' => $envio], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class EnvioController extends Controller
      */
     public function destroy(Envio $envio)
     {
-        //
+        $envio->delete();
+        return response()->json(['message' => 'Envío eliminado correctamente'], 200);
     }
 }

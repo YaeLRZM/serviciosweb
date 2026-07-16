@@ -12,7 +12,7 @@ class StoreArtesanoRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('crearArtesanos') ?? false;
     }
 
     /**
@@ -23,7 +23,7 @@ class StoreArtesanoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nombre' => 'required|string|max:255',
         ];
     }
 }

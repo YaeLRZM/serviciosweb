@@ -63,22 +63,13 @@ class DatabaseSeeder extends Seeder
         Cupon::factory(10)->create();
         CuponCanjeado::factory(10)->create();
         ImagenArticulo::factory(50)->create();
-        User::factory()->create([
+        $admin = User::factory()->create([
             'nombre' => 'example',
             'apellido_materno' => 'Test',
             'apellido_paterno' => 'User',
             'email' => 'test@example.com',
         ]);
-
-
-        $admin = User::factory()->create([
-            'nombre' => 'Admin',
-            'apellido_paterno' => 'Sistema',
-            'apellido_materno' => 'Principal',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('password'),
-        ]);
-
         $admin->assignRole('admin');
+        
     }
 }

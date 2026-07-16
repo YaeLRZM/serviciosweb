@@ -46,7 +46,7 @@ class Articulo extends Model
     }
     public function detalle_ventas()
     {
-        return $this->hasMany(Detalle_Venta::class);
+        return $this->hasMany(DetalleVenta::class);
     }
     public function detalle_carritos()
     {

@@ -83,7 +83,7 @@ class User extends Authenticatable implements JWTSubject
     }
     public function detalle_inventarios()
     {
-        return $this->hasMany(Detalle_Inventario::class);
+        return $this->hasMany(DetalleInventario::class);
     }
     public function cuponCanjeados()
     {

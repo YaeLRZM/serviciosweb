@@ -75,6 +75,8 @@ class ArtesanoController extends Controller
      */
     public function destroy(Artesano $artesano)
     {
+        abort_unless(request()->user()?->can('eliminarArtesanos'), 403, 'No autorizado');
+
         $artesano->delete();
         return response()->json(['message' => 'Artesano eliminado correctamente']);
     }

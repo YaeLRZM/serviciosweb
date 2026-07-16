@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreDetalle_CampanaRequest;
-use App\Http\Requests\UpdateDetalle_CampanaRequest;
+use App\Http\Requests\StoreDetalleCampanaRequest;
+use App\Http\Requests\UpdateDetalleCampanaRequest;
 use App\Models\DetalleCampana;
 
 class DetalleCampanaController extends Controller
@@ -13,7 +13,7 @@ class DetalleCampanaController extends Controller
      */
     public function index()
     {
-        //
+        return DetalleCampana::all();
     }
 
     /**
@@ -27,9 +27,10 @@ class DetalleCampanaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreDetalle_CampanaRequest $request)
+    public function store(StoreDetalleCampanaRequest $request)
     {
-        //
+        $detalleCampana = DetalleCampana::create($request->validated());
+        return response()->json(['message' => 'Detalle de campaña creado correctamente', 'detalleCampana' => $detalleCampana], 201);
     }
 
     /**
@@ -37,7 +38,7 @@ class DetalleCampanaController extends Controller
      */
     public function show(DetalleCampana $detalleCampana)
     {
-        //
+        return response()->json(['detalleCampana' => $detalleCampana], 200);
     }
 
     /**
@@ -51,9 +52,10 @@ class DetalleCampanaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateDetalle_CampanaRequest $request, DetalleCampana $detalleCampana)
+    public function update(UpdateDetalleCampanaRequest $request, DetalleCampana $detalleCampana)
     {
-        //
+        $detalleCampana->update($request->validated());
+        return response()->json(['message' => 'Detalle de campaña actualizado correctamente', 'detalleCampana' => $detalleCampana], 200);
     }
 
     /**
@@ -61,6 +63,7 @@ class DetalleCampanaController extends Controller
      */
     public function destroy(DetalleCampana $detalleCampana)
     {
-        //
+        $detalleCampana->delete();
+        return response()->json(['message' => 'Detalle de campaña eliminado correctamente'], 200);
     }
 }

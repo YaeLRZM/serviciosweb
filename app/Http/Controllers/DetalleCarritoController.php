@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreDetalle_CarritoRequest;
-use App\Http\Requests\UpdateDetalle_CarritoRequest;
+use App\Http\Requests\StoreDetalleCarritoRequest;
+use App\Http\Requests\UpdateDetalleCarritoRequest;
 use App\Models\DetalleCarrito;
 
 class DetalleCarritoController extends Controller
@@ -27,7 +27,7 @@ class DetalleCarritoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreDetalle_CarritoRequest $request)
+    public function store(StoreDetalleCarritoRequest $request)
     {
         return DetalleCarrito::create($request->all());
     }
@@ -51,7 +51,7 @@ class DetalleCarritoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateDetalle_CarritoRequest $request, DetalleCarrito $detalleCarrito)
+    public function update(UpdateDetalleCarritoRequest $request, DetalleCarrito $detalleCarrito)
     {
         return $detalleCarrito->update($request->all());
     }

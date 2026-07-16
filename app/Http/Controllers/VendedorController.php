@@ -4,23 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreVendedorRequest;
 use App\Http\Requests\UpdateVendedorRequest;
-use App\Http\Resources\VendedorResource;
 use App\Models\Vendedor;
-use Illuminate\Http\Request;
 
 class VendedorController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $vendedores = Vendedor::with(['tienda', 'user'])
-            ->when($request->filled('tienda'), fn ($q) => $q->where('tienda_id', $request->input('tienda')))
-            ->when($request->filled('estatus'), fn ($q) => $q->where('estatus', $request->input('estatus')))
-            ->get();
+        return Vendedor::all();
+    }
 
-        return VendedorResource::collection($vendedores);
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
     }
 
     /**
@@ -29,8 +30,7 @@ class VendedorController extends Controller
     public function store(StoreVendedorRequest $request)
     {
         $vendedor = Vendedor::create($request->validated());
-
-        return new VendedorResource($vendedor->load(['tienda', 'user']));
+        return response()->json(['message' => 'Vendedor creado correctamente', 'vendedor' => $vendedor], 201);
     }
 
     /**
@@ -38,9 +38,15 @@ class VendedorController extends Controller
      */
     public function show(Vendedor $vendedor)
     {
-        $vendedor->load(['tienda', 'user']);
+        return $vendedor;
+    }
 
-        return new VendedorResource($vendedor);
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Vendedor $vendedor)
+    {
+        //
     }
 
     /**
@@ -49,8 +55,7 @@ class VendedorController extends Controller
     public function update(UpdateVendedorRequest $request, Vendedor $vendedor)
     {
         $vendedor->update($request->validated());
-
-        return new VendedorResource($vendedor->load(['tienda', 'user']));
+        return response()->json(['message' => 'Vendedor actualizado correctamente', 'vendedor' => $vendedor], 200);
     }
 
     /**
@@ -59,7 +64,6 @@ class VendedorController extends Controller
     public function destroy(Vendedor $vendedor)
     {
         $vendedor->delete();
-
-        return response()->json(['message' => 'Vendedor eliminado correctamente.'], 200);
+        return response()->json(['message' => 'Vendedor eliminado correctamente'], 200);
     }
 }

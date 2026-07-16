@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Models\Detalle_Inventario;
+use App\Models\DetalleInventario;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Detalle_Inventario>
+ * @extends Factory<DetalleInventario>
  */
 class DetalleInventarioFactory extends Factory
 {
