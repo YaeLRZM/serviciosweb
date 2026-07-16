@@ -1,6 +1,5 @@
 <?php
 
-use App\Services\Api\DashboardApiService;
 use App\Services\Dashboard\DashboardStatsService;
 use Livewire\Volt\Component;
 
@@ -22,85 +21,26 @@ new class extends Component {
         $this->cargarDatos();
     }
 
-    private bool $usarMock = true;
-
     public function cargarDatos(): void
     {
         $this->cargando = true;
         $this->error = null;
         $this->errorVendedores = null;
 
-        if ($this->usarMock) {
-
-            $this->estadisticas = match ($this->filtro_tiempo) {
-
-                'mes' => [
-                    'clientes_activos' => 1874,
-                    'clientes_crecimiento' => '+12% (vs mes anterior)',
-                    'ventas' => 4962,
-                    'ventas_crecimiento' => '+8% (vs mes anterior)',
-                ],
-
-                'semana' => [
-                    'clientes_activos' => 634,
-                    'clientes_crecimiento' => '+5% (vs semana anterior)',
-                    'ventas' => 1897,
-                    'ventas_crecimiento' => '+3% (vs semana anterior)',
-                ],
-
-                default => [
-                    'clientes_activos' => 3280,
-                    'clientes_crecimiento' => '+25% (vs año anterior)',
-                    'ventas' => 12450,
-                    'ventas_crecimiento' => '+18% (vs año anterior)',
-                ],
-            };
-
-            $this->vendedores = [
-                [
-                    'nombre' => 'Ana Lucía',
-                    'foto_url' => 'https://ui-avatars.com/api/?name=Ana+Lucia&background=D81B60&color=fff&rounded=true',
-                ],
-                [
-                    'nombre' => 'Miguel Ángel',
-                    'foto_url' => 'https://ui-avatars.com/api/?name=Miguel+Angel&background=D81B60&color=fff&rounded=true',
-                ],
-                [
-                    'nombre' => 'Sofia García',
-                    'foto_url' => 'https://ui-avatars.com/api/?name=Sofia+Garcia&background=D81B60&color=fff&rounded=true',
-                ],
-                [
-                    'nombre' => 'Carlos Ruiz',
-                    'foto_url' => 'https://ui-avatars.com/api/?name=Carlos+Ruiz&background=D81B60&color=fff&rounded=true',
-                ],
+        try {
+            $svc = app(DashboardStatsService::class);
+            $this->estadisticas = $svc->resumenGeneral($this->filtro_tiempo);
+            $this->vendedores = $svc->vendedoresDestacados(4);
+        } catch (\Throwable $e) {
+            $this->error = 'No se pudieron cargar las estadísticas del dashboard.';
+            $this->estadisticas = [
+                'clientes_activos' => 0,
+                'clientes_crecimiento' => '—',
+                'ventas' => 0,
+                'ventas_crecimiento' => '—',
             ];
-        } else {
-            $this->realizarPeticionesApi();
-        }
-
-        $this->cargando = false;
-    }
-
-    private function realizarPeticionesApi(): void
-    {
-        try {
-            $this->estadisticas = app(DashboardStatsService::class)->resumenGeneral($this->filtro_tiempo);
-        } catch (\Throwable $e) {
-            $this->error = 'No se pudieron cargar las estadísticas.';
-        }
-
-        try {
-            $respuesta = app(DashboardApiService::class)->vendedoresDestacados();
-        } catch (\Throwable $e) {
-            $this->errorVendedores = 'No se pudieron cargar los vendedores destacados.';
             $this->vendedores = [];
-        }
-
-        if ($respuesta->successful()) {
-            $this->vendedores = $respuesta->json('data', []);
-        } else {
             $this->errorVendedores = 'No se pudieron cargar los vendedores destacados.';
-            $this->vendedores = [];
         }
 
         $this->cargando = false;
@@ -133,7 +73,7 @@ new class extends Component {
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
         <div class="bg-[#F8F5F2] rounded-3xl p-6 sm:p-8">
-            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Clientes Activos</p>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Clientes con compra</p>
             @if ($cargando)
             <div class="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
             @else
@@ -141,11 +81,12 @@ new class extends Component {
                 <p class="text-5xl font-extrabold text-[#D81B60]">{{ number_format($estadisticas['clientes_activos'] ?? 0) }}</p>
                 <span class="text-emerald-500 text-sm font-bold">{{ $estadisticas['clientes_crecimiento'] ?? '—' }}</span>
             </div>
+            <p class="text-[11px] text-gray-400 mt-2">Users distintos con venta completada</p>
             @endif
         </div>
 
         <div class="bg-[#F8F5F2] rounded-3xl p-6 sm:p-8">
-            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Ventas Realizadas</p>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Ventas completadas</p>
             @if ($cargando)
             <div class="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
             @else
@@ -153,34 +94,37 @@ new class extends Component {
                 <p class="text-5xl font-extrabold text-[#D81B60]">{{ number_format($estadisticas['ventas'] ?? 0) }}</p>
                 <span class="text-emerald-500 text-sm font-bold">{{ $estadisticas['ventas_crecimiento'] ?? '—' }}</span>
             </div>
+            <p class="text-[11px] text-gray-400 mt-2">estado = completada</p>
             @endif
         </div>
     </div>
 
     <div>
-        <h4 class="text-sm font-bold text-gray-700 mb-5">Vendedores destacados</h4>
+        <h4 class="text-sm font-bold text-gray-700 mb-5">Vendedores activos (por ventas de tienda)</h4>
 
         @if ($errorVendedores)
         <div class="bg-red-50 text-red-600 text-xs rounded-xl p-3">{{ $errorVendedores }}</div>
         @elseif ($cargando)
         <div class="flex gap-4">
             @for ($i = 0; $i < 4; $i++)
-                <div class="h-11 w-32 bg-gray-100 rounded-full animate-pulse">
+                <div class="h-11 w-32 bg-gray-100 rounded-full animate-pulse"></div>
+            @endfor
         </div>
-        @endfor
-    </div>
-    @elseif (empty($vendedores))
-    <p class="text-sm text-gray-400">Aún no hay vendedores destacados.</p>
-    @else
-    <div class="flex flex-wrap gap-4">
-        @foreach ($vendedores as $vendedor)
-        <div class="flex items-center gap-5 bg-white border border-gray-100 rounded-full pr-6 py-1.5 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-            <img src="{{ $vendedor['foto_url'] ?? ('https://ui-avatars.com/api/?name=' . urlencode($vendedor['nombre']) . '&background=D81B60&color=fff&rounded=true') }}"
-                alt="{{ $vendedor['nombre'] }}" class="w-10 h-10 rounded-full object-cover">
-            <span class="text-sm font-bold text-gray-700">{{ $vendedor['nombre'] }}</span>
+        @elseif (empty($vendedores))
+        <p class="text-sm text-gray-400">No hay vendedores activos.</p>
+        @else
+        <div class="flex flex-wrap gap-4">
+            @foreach ($vendedores as $vendedor)
+            <div class="flex items-center gap-3 bg-white border border-gray-100 rounded-full pr-5 py-1.5 shadow-sm hover:shadow-md transition-shadow">
+                <img src="{{ $vendedor['foto_url'] }}"
+                    alt="{{ $vendedor['nombre'] }}" class="w-10 h-10 rounded-full object-cover">
+                <div class="min-w-0">
+                    <span class="text-sm font-bold text-gray-700 block truncate max-w-[140px]">{{ $vendedor['nombre'] }}</span>
+                    <span class="text-[10px] text-gray-400 block truncate max-w-[140px]">{{ $vendedor['tienda'] ?? '' }} · {{ $vendedor['ventas'] ?? 0 }} ventas</span>
+                </div>
+            </div>
+            @endforeach
         </div>
-        @endforeach
+        @endif
     </div>
-    @endif
-</div>
 </div>

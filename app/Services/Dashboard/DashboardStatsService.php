@@ -3,58 +3,52 @@
 namespace App\Services\Dashboard;
 
 use App\Models\Articulo;
-use App\Models\Compra;
-use App\Services\Api\ArticuloApiService;
-use App\Services\Api\CompraApiService;
-use App\Services\Api\UsuarioApiService;
-use Illuminate\Http\Client\Response;
+use App\Models\Categoria;
+use App\Models\DetalleVenta;
+use App\Models\Inventario;
+use App\Models\Vendedor;
+use App\Models\Venta;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Métricas del dashboard admin desde PostgreSQL (Eloquent/SQL local).
+ * Sin mocks ni self-HTTP.
+ *
+ * Fuente real de ventas: tablas ventas + detalle_ventas (+ articulos, artesanos, tiendas, users, vendedors).
+ * Nota: la tabla "compras" no existe en el schema pgsql actual.
+ */
 class DashboardStatsService
 {
-    public function __construct(
-        protected UsuarioApiService $usuarios,
-        protected CompraApiService $compras,
-        protected ArticuloApiService $articulos,
-    ) {}
-
+    /**
+     * Clientes activos = users distintos con al menos 1 venta completada en el periodo.
+     * Ventas realizadas = conteo de ventas con estado = completada en el periodo.
+     *
+     * @return array{clientes_activos:int, clientes_crecimiento:string, ventas:int, ventas_crecimiento:string}
+     */
     public function resumenGeneral(string $periodo): array
     {
-        $compras = $this->obtenerColeccion($this->compras->all());
-
         [$desde, $hasta] = $this->rangoFechas($periodo);
         [$desdeAnterior, $hastaAnterior] = $this->rangoAnterior($periodo);
 
-        $comprasPeriodo = $this->filtrarPorFecha($compras, $desde, $hasta);
-        $comprasAnterior = $this->filtrarPorFecha($compras, $desdeAnterior, $hastaAnterior);
+        $clientesActivos = $this->clientesActivosEntre($desde, $hasta);
+        $clientesAnterior = $this->clientesActivosEntre($desdeAnterior, $hastaAnterior);
 
-        // Supuesto: "cliente activo" = cliente distinto con al menos 1 compra en el periodo.
-        // Ajustar si el negocio maneja otro criterio (ej. Usuarios.Estatus = 'Activo').
-        $clientesActivos = collect($comprasPeriodo)->pluck('user_id')->unique()->count();
-        $clientesActivosAnterior = collect($comprasAnterior)->pluck('user_id')->unique()->count();
+        $ventas = $this->ventasCompletadasEntre($desde, $hasta);
+        $ventasAnterior = $this->ventasCompletadasEntre($desdeAnterior, $hastaAnterior);
 
         return [
             'clientes_activos' => $clientesActivos,
-            'clientes_crecimiento' => $this->calcularCrecimiento($clientesActivosAnterior, $clientesActivos),
-            'ventas' => count($comprasPeriodo),
-            'ventas_crecimiento' => $this->calcularCrecimiento(count($comprasAnterior), count($comprasPeriodo)),
+            'clientes_crecimiento' => $this->calcularCrecimiento($clientesAnterior, $clientesActivos),
+            'ventas' => $ventas,
+            'ventas_crecimiento' => $this->calcularCrecimiento($ventasAnterior, $ventas),
         ];
     }
 
-    public function productosPopulares(int $limite = 3): array
-    {
-        return $this->calcularTopProductos($limite);
-    }
-
-    public function top20ProductosVendidos(): array
-    {
-        return $this->calcularTopProductos(20);
-    }
-
     /**
-     * Top productos desde BD local (sin HTTP / sin ApiClient).
-     * Evita self-request a artisan serve en el dashboard admin.
+     * Top productos por unidades vendidas (detalle_ventas + articulos + artesanos).
+     *
+     * @return list<array{id:int,nombre:string,region:string,artesano:string,precio_unitario:float,cantidad_vendida:int,total_vendido:float}>
      */
     public function productosPopularesDesdeBd(int $limite = 3): array
     {
@@ -62,151 +56,251 @@ class DashboardStatsService
     }
 
     /**
-     * Top N productos vendidos agregando compras en SQL (sin HTTP).
-     * Misma forma de array que calcularTopProductos() (ruta API).
-     *
-     * @return array<int, array{id:int,nombre:string,region:string,artesano:string,precio_unitario:float,cantidad_vendida:int,total_vendido:float}>
+     * @return list<array{id:int,nombre:string,region:string,artesano:string,precio_unitario:float,cantidad_vendida:int,total_vendido:float}>
      */
     public function topProductosVendidosDesdeBd(int $limite = 20): array
     {
         $limite = max(1, $limite);
 
-        // 1 query de agregación + 1 query de nombres (sin N+1).
-        $filas = Compra::query()
+        $filas = DetalleVenta::query()
+            ->from('detalle_ventas as d')
+            ->join('articulos as a', 'a.id', '=', 'd.articulo_id')
+            ->leftJoin('artesanos as ar', 'ar.id', '=', 'a.artesano_id')
             ->select([
-                'articulo_id',
-                DB::raw('SUM(cantidad) as cantidad_vendida'),
-                DB::raw('SUM(cantidad * precio_unitario) as total_vendido'),
-                DB::raw('AVG(precio_unitario) as precio_unitario'),
+                'd.articulo_id',
+                'a.nombre',
+                'a.region',
+                'ar.nombre as artesano',
+                DB::raw('SUM(d.cantidad) as cantidad_vendida'),
+                DB::raw('AVG(d.precio_unitario) as precio_unitario'),
+                DB::raw('SUM(d.subtotal) as total_vendido'),
             ])
-            ->groupBy('articulo_id')
+            ->groupBy('d.articulo_id', 'a.nombre', 'a.region', 'ar.nombre')
             ->orderByDesc('cantidad_vendida')
             ->limit($limite)
             ->get();
 
-        if ($filas->isEmpty()) {
+        return $filas->map(fn ($fila) => [
+            'id' => (int) $fila->articulo_id,
+            'nombre' => (string) ($fila->nombre ?? 'Producto eliminado'),
+            'region' => (string) ($fila->region ?? '—'),
+            'artesano' => (string) ($fila->artesano ?? '—'),
+            'precio_unitario' => (float) $fila->precio_unitario,
+            'cantidad_vendida' => (int) $fila->cantidad_vendida,
+            'total_vendido' => (float) $fila->total_vendido,
+        ])->values()->all();
+    }
+
+    /**
+     * Ventas (unidades) agrupadas por articulos.region.
+     * Filtro opcional por categoria_id o nombre de categoría; "Todos" = sin filtro.
+     *
+     * @return list<array{region:string,ventas:int,top_prenda:string}>
+     */
+    public function ventasPorRegion(?string $categoriaFiltro = null): array
+    {
+        $query = DetalleVenta::query()
+            ->from('detalle_ventas as d')
+            ->join('articulos as a', 'a.id', '=', 'd.articulo_id')
+            ->select([
+                'a.region',
+                DB::raw('SUM(d.cantidad) as ventas'),
+            ])
+            ->whereNotNull('a.region')
+            ->where('a.region', '!=', '');
+
+        if ($categoriaFiltro && $categoriaFiltro !== 'Todos') {
+            if (is_numeric($categoriaFiltro)) {
+                $query->where('a.categoria_id', (int) $categoriaFiltro);
+            } else {
+                $query->join('categorias as c', 'c.id', '=', 'a.categoria_id')
+                    ->where('c.nombre', $categoriaFiltro);
+            }
+        }
+
+        $porRegion = $query
+            ->groupBy('a.region')
+            ->orderByDesc('ventas')
+            ->limit(12)
+            ->get();
+
+        if ($porRegion->isEmpty()) {
             return [];
         }
 
-        $nombres = Articulo::query()
-            ->whereIn('id', $filas->pluck('articulo_id'))
-            ->pluck('nombre', 'id');
+        // Top prenda por región (1 query auxiliar con window).
+        $tops = collect(DB::select("
+            SELECT region, nombre FROM (
+                SELECT a.region, a.nombre,
+                       SUM(d.cantidad) AS qty,
+                       ROW_NUMBER() OVER (PARTITION BY a.region ORDER BY SUM(d.cantidad) DESC) AS rn
+                FROM detalle_ventas d
+                JOIN articulos a ON a.id = d.articulo_id
+                GROUP BY a.region, a.nombre
+            ) t
+            WHERE rn = 1
+        "))->keyBy('region');
 
-        return $filas->map(function ($fila) use ($nombres) {
-            $articuloId = (int) $fila->articulo_id;
+        return $porRegion->map(fn ($fila) => [
+            'region' => (string) $fila->region,
+            'ventas' => (int) $fila->ventas,
+            'top_prenda' => (string) ($tops[$fila->region]->nombre ?? '—'),
+        ])->values()->all();
+    }
+
+    /**
+     * Categorías reales para el filtro del gráfico.
+     *
+     * @return list<array{id:int,nombre:string}>
+     */
+    public function categoriasFiltro(): array
+    {
+        return Categoria::query()
+            ->orderBy('nombre')
+            ->get(['id', 'nombre'])
+            ->map(fn (Categoria $c) => [
+                'id' => (int) $c->id,
+                'nombre' => (string) $c->nombre,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Vendedores activos con más ventas completadas en su tienda.
+     *
+     * @return list<array{id:int,nombre:string,tienda:string,foto_url:string,ventas:int}>
+     */
+    public function vendedoresDestacados(int $limite = 4): array
+    {
+        $limite = max(1, $limite);
+
+        $filas = Vendedor::query()
+            ->from('vendedors as v')
+            ->join('users as u', 'u.id', '=', 'v.user_id')
+            ->leftJoin('tiendas as t', 't.id', '=', 'v.tienda_id')
+            ->leftJoin('ventas as ve', function ($join) {
+                $join->on('ve.tienda_id', '=', 'v.tienda_id')
+                    ->where('ve.estado', '=', 'completada');
+            })
+            ->where('v.estatus', 'activo')
+            ->select([
+                'v.id',
+                'u.nombre',
+                'u.apellido_paterno',
+                'u.apellido_materno',
+                'u.email',
+                't.nombre as tienda',
+                DB::raw('COUNT(ve.id) as ventas'),
+            ])
+            ->groupBy('v.id', 'u.nombre', 'u.apellido_paterno', 'u.apellido_materno', 'u.email', 't.nombre')
+            ->orderByDesc('ventas')
+            ->limit($limite)
+            ->get();
+
+        return $filas->map(function ($fila) {
+            $partes = array_filter([
+                $fila->nombre,
+                $fila->apellido_paterno,
+                $fila->apellido_materno,
+            ]);
+            $nombre = trim(implode(' ', $partes));
+            if ($nombre === '') {
+                $nombre = (string) ($fila->email ?? 'Vendedor');
+            }
 
             return [
-                'id' => $articuloId,
-                'nombre' => (string) ($nombres[$articuloId] ?? 'Producto eliminado'),
-                // Misma convención que la ruta HTTP: región/artesano aún no existen en schema.
-                'region' => $this->regionMock($articuloId),
-                'artesano' => $this->artesanoMock($articuloId),
-                'precio_unitario' => (float) $fila->precio_unitario,
-                'cantidad_vendida' => (int) $fila->cantidad_vendida,
-                'total_vendido' => (float) $fila->total_vendido,
+                'id' => (int) $fila->id,
+                'nombre' => $nombre,
+                'tienda' => (string) ($fila->tienda ?? 'Sin tienda'),
+                'foto_url' => 'https://ui-avatars.com/api/?name=' . urlencode($nombre) . '&background=D81B60&color=fff&rounded=true',
+                'ventas' => (int) $fila->ventas,
             ];
         })->values()->all();
     }
 
-    public function ventasPorRegion(string $categoria): array
+    /**
+     * Alertas operativas reales (no hay tabla de reportes/moderación).
+     *
+     * @return list<array{tipo:string,entidad:string,motivo:string,urgente:bool,count:int}>
+     */
+    public function alertasOperativas(): array
     {
-        // TODO backend: no hay región ni categoría por prenda en el Articulo del API actual.
-        // Sustituir esta función completa cuando exista el dato real.
-        $base = [1250, 980, 740, 420, 310, 680, 210, 550];
-
-        if ($categoria === 'Todos') {
-            return array_map(fn($v) => (int) round($v * 1.4), $base);
-        }
-
-        return $base;
-    }
-
-    public function artesanosDestacados(): array
-    {
-        // TODO backend: no existe endpoint de "Vendedores" en el API actual.
-        return [
-            ['nombre' => 'Juana V.', 'color' => 'D81B60'],
-            ['nombre' => 'Pedro L.', 'color' => '4338CA'],
-            ['nombre' => 'María C.', 'color' => '0D9488'],
-            ['nombre' => 'Rosa M.', 'color' => 'EA580C'],
-        ];
-    }
-
-    public function alertasModeracion(): array
-    {
-        // TODO backend: no existe endpoint de reportes/moderación todavía.
-        return [
-            [
-                'tipo' => 'Publicación Sospechosa',
-                'usuario' => '@mariana_oax',
-                'motivo' => 'Posible revendedor industrial. Subió un lote de 50 "huipiles estilizados" idénticos que parecen de maquila y no hechos en telar.',
-                'fecha' => 'Hace 10 min',
-                'urgente' => true,
-            ],
-            [
-                'tipo' => 'Vendedor Sospechoso',
-                'usuario' => '@artesanias_premium_mx',
-                'motivo' => 'Múltiples usuarios reportan que usa fotos robadas del colectivo de tejedoras de San Juan Cotzocón para vender imitaciones.',
-                'fecha' => 'Hace 2 horas',
-                'urgente' => false,
-            ],
-            [
-                'tipo' => 'Publicación Sospechosa',
-                'usuario' => '@artesano_anonimo',
-                'motivo' => 'Denuncia de plagio. Diseños registrados de iconografía sagrada de la Mixteca alta siendo comercializados sin permiso comunitario.',
-                'fecha' => 'Ayer',
-                'urgente' => false,
-            ],
-        ];
-    }
-
-    private function calcularTopProductos(int $limite): array
-    {
-        $compras = $this->obtenerColeccion($this->compras->all());
-
-        if (empty($compras)) {
-            return [];
-        }
-
-        $articulos = $this->obtenerColeccion($this->articulos->all());
-        $articulosPorId = collect($articulos)->keyBy('id');
-
-        return collect($compras)
-            ->groupBy('articulo_id')
-            ->map(function ($grupo, $articuloId) use ($articulosPorId) {
-                $articulo = $articulosPorId->get((int) $articuloId);
-                $cantidadTotal = (int) $grupo->sum('cantidad');
-                $totalVendido = (float) $grupo->sum(fn($c) => $c['cantidad'] * $c['precio_unitario']);
-                $precioUnitario = (float) ($grupo->first()['precio_unitario'] ?? ($articulo['precio'] ?? 0));
-
-                return [
-                    'id' => (int) $articuloId,
-                    'nombre' => $articulo['nombre'] ?? 'Producto eliminado',
-                    // TODO backend: región/artesano no existen en el schema Articulo del API.
-                    // Reemplazar por $articulo['region'] / $articulo['artesano'] cuando el API los incluya.
-                    'region' => $this->regionMock((int) $articuloId),
-                    'artesano' => $this->artesanoMock((int) $articuloId),
-                    'precio_unitario' => $precioUnitario,
-                    'cantidad_vendida' => $cantidadTotal,
-                    'total_vendido' => $totalVendido,
-                ];
+        $vendedoresInactivos = Vendedor::query()->where('estatus', 'inactivo')->count();
+        $articulosAgotados = Articulo::query()
+            ->where(function ($q) {
+                $q->whereDoesntHave('inventario')
+                    ->orWhereHas('inventario', fn ($i) => $i->where('stock_actual', '<=', 0));
             })
-            ->sortByDesc('cantidad_vendida')
-            ->take($limite)
-            ->values()
-            ->toArray();
+            ->count();
+        $ventasPendientes = Venta::query()->where('estado', 'pendiente')->count();
+        $stockBajo = Inventario::query()
+            ->whereColumn('stock_actual', '<=', 'stock_minimo')
+            ->where('stock_actual', '>', 0)
+            ->count();
+
+        $alertas = [];
+
+        if ($vendedoresInactivos > 0) {
+            $alertas[] = [
+                'tipo' => 'Vendedores inactivos',
+                'entidad' => 'vendedor',
+                'motivo' => "Hay {$vendedoresInactivos} vendedor(es) con estatus inactivo pendientes de revisión.",
+                'urgente' => $vendedoresInactivos >= 3,
+                'count' => $vendedoresInactivos,
+            ];
+        }
+
+        if ($articulosAgotados > 0) {
+            $alertas[] = [
+                'tipo' => 'Artículos agotados',
+                'entidad' => 'publicacion',
+                'motivo' => "Hay {$articulosAgotados} artículo(s) sin existencias (stock 0 o sin inventario).",
+                'urgente' => $articulosAgotados >= 10,
+                'count' => $articulosAgotados,
+            ];
+        }
+
+        if ($stockBajo > 0) {
+            $alertas[] = [
+                'tipo' => 'Stock bajo mínimo',
+                'entidad' => 'publicacion',
+                'motivo' => "Hay {$stockBajo} inventario(s) con stock_actual ≤ stock_minimo.",
+                'urgente' => false,
+                'count' => $stockBajo,
+            ];
+        }
+
+        if ($ventasPendientes > 0) {
+            $alertas[] = [
+                'tipo' => 'Ventas pendientes',
+                'entidad' => 'publicacion',
+                'motivo' => "Hay {$ventasPendientes} venta(s) en estado pendiente.",
+                'urgente' => $ventasPendientes >= 5,
+                'count' => $ventasPendientes,
+            ];
+        }
+
+        return $alertas;
     }
 
-    private function regionMock(int $articuloId): string
+    // ── helpers ──────────────────────────────────────────────────────────
+
+    private function clientesActivosEntre(Carbon $desde, Carbon $hasta): int
     {
-        $regiones = ['Valles', 'Istmo', 'Costa', 'Sierra Sur', 'Sierra Norte', 'Papaloapan', 'Cañada', 'Mixteca'];
-        return $regiones[$articuloId % count($regiones)];
+        return (int) Venta::query()
+            ->where('estado', 'completada')
+            ->whereBetween('created_at', [$desde, $hasta])
+            ->distinct('user_id')
+            ->count('user_id');
     }
 
-    private function artesanoMock(int $articuloId): string
+    private function ventasCompletadasEntre(Carbon $desde, Carbon $hasta): int
     {
-        $artesanos = ['Juana Vásquez', 'Pedro López', 'María Cruz', 'Rosa Martínez', 'Felipe Ramírez'];
-        return $artesanos[$articuloId % count($artesanos)];
+        return (int) Venta::query()
+            ->where('estado', 'completada')
+            ->whereBetween('created_at', [$desde, $hasta])
+            ->count();
     }
 
     private function rangoFechas(string $periodo): array
@@ -214,7 +308,7 @@ class DashboardStatsService
         return match ($periodo) {
             'semana' => [now()->subDays(7), now()],
             'mes' => [now()->startOfMonth(), now()],
-            default => [now()->subYears(5), now()], // 'todo'
+            default => [now()->subYears(5), now()],
         };
     }
 
@@ -223,18 +317,8 @@ class DashboardStatsService
         return match ($periodo) {
             'semana' => [now()->subDays(14), now()->subDays(7)],
             'mes' => [now()->subMonthNoOverflow()->startOfMonth(), now()->subMonthNoOverflow()->endOfMonth()],
-            default => [now()->subDays(60), now()->subDays(30)], // tendencia de referencia para 'todo'
+            default => [now()->subYears(10), now()->subYears(5)],
         };
-    }
-
-    private function filtrarPorFecha(array $items, Carbon $desde, Carbon $hasta): array
-    {
-        return array_values(array_filter($items, function ($item) use ($desde, $hasta) {
-            if (empty($item['created_at'])) {
-                return false;
-            }
-            return Carbon::parse($item['created_at'])->between($desde, $hasta);
-        }));
     }
 
     private function calcularCrecimiento(int $anterior, int $actual): string
@@ -247,17 +331,5 @@ class DashboardStatsService
         $signo = $variacion >= 0 ? '+' : '';
 
         return $signo . round($variacion) . '%';
-    }
-
-    private function obtenerColeccion(Response $response): array
-    {
-        if (! $response->successful()) {
-            return [];
-        }
-
-        $data = $response->json();
-
-        // Por si el API pagina la respuesta (data.data) o regresa un array plano
-        return $data['data'] ?? $data ?? [];
     }
 }
