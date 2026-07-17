@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'chatbot'],
 
     'allowed_methods' => ['*'],
 
@@ -23,6 +23,8 @@ return [
         'http://127.0.0.1:3000',
         'http://localhost:5173',   // por si usas Vite en el futuro
         'http://127.0.0.1:5173',
+        'http://localhost:8000',   // Swagger UI "Try it out" (misma API)
+        'http://127.0.0.1:8000',
     ],
 
     'allowed_origins_patterns' => [],

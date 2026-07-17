@@ -1,143 +1,73 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Servicios Web API",
-        "description": "Documentación Swagger de la API con autenticación JWT.",
+        "title": "API Servicios Web - Artesanías",
+        "description": "API REST para el catálogo de artículos artesanales, tiendas, categorías y artesanos.",
         "version": "1.0.0"
     },
     "servers": [
         {
-            "url": "/",
-            "description": "Servidor local de la API"
+            "url": "http://localhost:8000",
+            "description": "Servidor local"
         }
     ],
     "paths": {
-        "/api/login": {
-            "post": {
+        "/api/artesanos": {
+            "get": {
                 "tags": [
-                    "Auth"
+                    "Artesanos"
                 ],
-                "summary": "Iniciar sesión y obtener JWT",
-                "operationId": "0c7b81e42ce22c8e2c23dd70dd0819f0",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/LoginRequest"
-                            }
-                        }
-                    }
-                },
+                "summary": "Listar artesanos (público)",
+                "operationId": "079e10370d2bf3552563f9c8dee8b503",
                 "responses": {
                     "200": {
-                        "description": "Token JWT generado",
+                        "description": "Listado de artesanos",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/TokenResponse"
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Artesano"
+                                    }
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "description": "Credenciales inválidas"
                     }
                 }
             }
         },
-        "/api/me": {
+        "/api/artesanos/{id}": {
             "get": {
                 "tags": [
-                    "Auth"
+                    "Artesanos"
                 ],
-                "summary": "Obtener el usuario autenticado",
-                "operationId": "708ce6825bbf01d49c8b20e94a94f3aa",
+                "summary": "Ver un artesano (público)",
+                "operationId": "d631149ad3a4a08139f7f972c0f191d1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Usuario autenticado",
+                        "description": "Artesano encontrado",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/User"
+                                    "$ref": "#/components/schemas/Artesano"
                                 }
                             }
                         }
                     },
-                    "401": {
-                        "description": "No autenticado"
+                    "404": {
+                        "description": "No encontrado"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/logout": {
-            "post": {
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Cerrar sesión y revocar el token",
-                "operationId": "7b8022dfc08ba491a41e70720578406f",
-                "responses": {
-                    "200": {
-                        "description": "Sesión cerrada"
-                    },
-                    "401": {
-                        "description": "No autenticado"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/refresh": {
-            "post": {
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Renovar el JWT",
-                "operationId": "9700bf925e2283b3c64fc2f5f8bba760",
-                "responses": {
-                    "200": {
-                        "description": "Token renovado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "access_token": {
-                                            "type": "string",
-                                            "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                                        },
-                                        "token_type": {
-                                            "type": "string",
-                                            "example": "Bearer"
-                                        },
-                                        "expires_in": {
-                                            "type": "integer",
-                                            "example": 3600
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "No autenticado"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/articulos": {
@@ -145,114 +75,149 @@
                 "tags": [
                     "Articulos"
                 ],
-                "summary": "Listar artículos",
-                "operationId": "279c6af49b6872381a2f09885cde7610",
+                "summary": "Listar artículos (público, sin autenticación)",
+                "description": "Devuelve todos los artículos con su categoría, artesano, tienda e imágenes. Acepta filtros opcionales por query string; si no se envía ninguno se devuelven todos.",
+                "operationId": "021362b92b70d8c24f566bb0db7178d5",
+                "parameters": [
+                    {
+                        "name": "categoria",
+                        "in": "query",
+                        "description": "ID de la categoría",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "artesano",
+                        "in": "query",
+                        "description": "ID del artesano",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "tienda",
+                        "in": "query",
+                        "description": "ID de la tienda",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "color",
+                        "in": "query",
+                        "description": "Color exacto",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "bordado",
+                        "in": "query",
+                        "description": "Tipo de bordado",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tela",
+                        "in": "query",
+                        "description": "Tipo de tela",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "region",
+                        "in": "query",
+                        "description": "Región de origen",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Listado de artículos",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Articulo"
-                                    }
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Articulo"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Articulos"
-                ],
-                "summary": "Crear artículo",
-                "operationId": "dd73eeadcdc657f65f0e581fc528408a",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ArticuloUpsertRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Artículo creado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Articulo"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
-        "/api/articulos/{articulo}": {
+        "/api/articulos/{id}": {
             "get": {
                 "tags": [
                     "Articulos"
                 ],
-                "summary": "Obtener un artículo",
-                "operationId": "e42841dd5464fe4c138684fe773027bb",
+                "summary": "Ver un artículo (público, sin autenticación)",
+                "operationId": "53ebb83e59d006abd1bd488176d98899",
                 "parameters": [
                     {
-                        "name": "articulo",
+                        "name": "id",
                         "in": "path",
+                        "description": "ID del artículo",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Artículo",
+                        "description": "Artículo encontrado",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Articulo"
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Articulo"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Artículo no encontrado"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             },
             "put": {
                 "tags": [
                     "Articulos"
                 ],
-                "summary": "Actualizar artículo",
-                "operationId": "b75f31bc819c3e1207672c7e74a96a18",
+                "summary": "Actualizar un artículo (requiere permiso editarArticulos)",
+                "description": "Update the specified resource in storage.",
+                "operationId": "8b012fffca1a2f25e37727c1097c0471",
                 "parameters": [
                     {
-                        "name": "articulo",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
@@ -261,7 +226,31 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/ArticuloUpsertRequest"
+                                "required": [
+                                    "nombre",
+                                    "precio",
+                                    "stock"
+                                ],
+                                "properties": {
+                                    "nombre": {
+                                        "type": "string",
+                                        "example": "Huipil bordado"
+                                    },
+                                    "descripcion": {
+                                        "type": "string",
+                                        "example": "Bordado a mano"
+                                    },
+                                    "precio": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1250
+                                    },
+                                    "stock": {
+                                        "type": "integer",
+                                        "example": 12
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
@@ -276,6 +265,12 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Sin permiso"
+                    },
+                    "422": {
+                        "description": "Datos inválidos"
                     }
                 },
                 "security": [
@@ -288,22 +283,25 @@
                 "tags": [
                     "Articulos"
                 ],
-                "summary": "Eliminar artículo",
-                "operationId": "ad63e723cc5af414dac7c4f020074191",
+                "summary": "Eliminar un artículo (requiere permiso eliminarArticulos)",
+                "description": "Remove the specified resource from storage.",
+                "operationId": "de4809e8ad8eea751584f66ed2aab554",
                 "parameters": [
                     {
-                        "name": "articulo",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
-                    "204": {
+                    "200": {
                         "description": "Artículo eliminado"
+                    },
+                    "403": {
+                        "description": "Sin permiso"
                     }
                 },
                 "security": [
@@ -313,744 +311,288 @@
                 ]
             }
         },
-        "/api/resenas": {
-            "get": {
+        "/api/login": {
+            "post": {
                 "tags": [
-                    "Resenas"
+                    "Auth"
                 ],
-                "summary": "Listar reseñas",
-                "operationId": "faea8f7e49d7977c8441191f3f0452fe",
+                "summary": "Iniciar sesión y obtener un token JWT",
+                "description": "Generar un JWT a partir de credenciales.",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "test@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Listado de reseñas",
+                        "description": "Autenticación correcta",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "access_token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "example": "bearer"
+                                        },
+                                        "expires_in": {
+                                            "type": "integer",
+                                            "example": 3600
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales inválidas"
+                    }
+                }
+            }
+        },
+        "/api/categorias": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Listar categorías (público)",
+                "operationId": "66bfb3e0bf7747700be142ec5329dfae",
+                "responses": {
+                    "200": {
+                        "description": "Listado de categorías",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/Resena"
+                                        "$ref": "#/components/schemas/Categoria"
                                     }
                                 }
                             }
                         }
                     }
-                },
-                "security": [
+                }
+            }
+        },
+        "/api/categorias/{id}": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Ver una categoría (público)",
+                "operationId": "af067e125b5f9a1b1306d9e5c2a5867e",
+                "parameters": [
                     {
-                        "bearerAuth": []
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
-                ]
-            },
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoría encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Categoria"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No encontrada"
+                    }
+                }
+            }
+        },
+        "/chatbot": {
             "post": {
                 "tags": [
-                    "Resenas"
+                    "Chatbot"
                 ],
-                "summary": "Crear reseña",
-                "operationId": "486e5ac8713f28fecb55f8fb09d10f0b",
+                "summary": "Asistente conversacional de artículos (público)",
+                "description": "Recibe un mensaje del usuario y responde consultando el catálogo de artículos. Usa el formato del driver web de BotMan. Detecta color, región y tipo de bordado en el texto.",
+                "operationId": "8c9ed65b69cc7edc4b0b81e004e3327f",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/ResenaUpsertRequest"
+                                "required": [
+                                    "driver",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "driver": {
+                                        "type": "string",
+                                        "example": "web"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "busco algo rojo de oaxaca"
+                                    },
+                                    "userId": {
+                                        "type": "string",
+                                        "example": "1"
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "Reseña creada",
+                        "description": "Respuesta(s) del asistente",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Resena"
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "example": 200
+                                        },
+                                        "messages": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "text"
+                                                    },
+                                                    "text": {
+                                                        "type": "string",
+                                                        "example": "Huipil bordado — rojo, Oaxaca (Artesanías del Sur)"
+                                                    },
+                                                    "attachment": {
+                                                        "type": "string",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "additionalParameters": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
-        "/api/resenas/{resena}": {
+        "/api/tiendas": {
             "get": {
                 "tags": [
-                    "Resenas"
+                    "Tiendas"
                 ],
-                "summary": "Obtener una reseña",
-                "operationId": "2be11e1b6e9e58d323d28c6d56030e87",
-                "parameters": [
-                    {
-                        "name": "resena",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
+                "summary": "Listar tiendas (público)",
+                "operationId": "292ab72a5d7219e0d50ed2584d2bae98",
                 "responses": {
                     "200": {
-                        "description": "Reseña",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Resena"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Resenas"
-                ],
-                "summary": "Actualizar reseña",
-                "operationId": "e4b531fe7d56d28a7119c50f5e158aef",
-                "parameters": [
-                    {
-                        "name": "resena",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ResenaUpsertRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Reseña actualizada",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Resena"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Resenas"
-                ],
-                "summary": "Eliminar reseña",
-                "operationId": "b845ee3ab91c24734a9dbb0e35013cfd",
-                "parameters": [
-                    {
-                        "name": "resena",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Reseña eliminada"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/usuarios": {
-            "get": {
-                "tags": [
-                    "Usuarios"
-                ],
-                "summary": "Listar usuarios",
-                "operationId": "5441e1e0f2c3742dfbee23db70a5b7d8",
-                "responses": {
-                    "200": {
-                        "description": "Listado de usuarios",
+                        "description": "Listado de tiendas",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/User"
+                                        "$ref": "#/components/schemas/Tienda"
                                     }
                                 }
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Usuarios"
-                ],
-                "summary": "Crear usuario",
-                "operationId": "80e1acb1143bf7063a1f820289487ea4",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UserUpsertRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Usuario creado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/User"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
-        "/api/usuarios/{usuario}": {
+        "/api/tiendas/{id}": {
             "get": {
                 "tags": [
-                    "Usuarios"
+                    "Tiendas"
                 ],
-                "summary": "Obtener un usuario",
-                "operationId": "5f5f8c83789fd9f428d7325c1eb6c156",
+                "summary": "Ver una tienda (público)",
+                "operationId": "2b2117386cae77630eba0370026a02a1",
                 "parameters": [
                     {
-                        "name": "usuario",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Usuario",
+                        "description": "Tienda encontrada",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/User"
+                                    "$ref": "#/components/schemas/Tienda"
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "No encontrada"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Usuarios"
-                ],
-                "summary": "Actualizar usuario",
-                "operationId": "31e56bd85142f40d1926b23a87148694",
-                "parameters": [
-                    {
-                        "name": "usuario",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UserUpsertRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Usuario actualizado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/User"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Usuarios"
-                ],
-                "summary": "Eliminar usuario",
-                "operationId": "d0b27a508f3694c1247fc75be89f0892",
-                "parameters": [
-                    {
-                        "name": "usuario",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Usuario eliminado"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/compras": {
-            "get": {
-                "tags": [
-                    "Compras"
-                ],
-                "summary": "Listar compras",
-                "operationId": "1fab5c16643f571de914feac01e6567b",
-                "responses": {
-                    "200": {
-                        "description": "Listado de compras",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Compra"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Compras"
-                ],
-                "summary": "Crear compra",
-                "operationId": "0d275390f0c76df48af445a2d3874512",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CompraUpsertRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Compra creada",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Compra"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/compras/{compra}": {
-            "get": {
-                "tags": [
-                    "Compras"
-                ],
-                "summary": "Obtener una compra",
-                "operationId": "47be6dc552baeb78020502f3781ddbcd",
-                "parameters": [
-                    {
-                        "name": "compra",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Compra",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Compra"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Compras"
-                ],
-                "summary": "Actualizar compra",
-                "operationId": "ebe688d09606ab4b22fc59ff4547098f",
-                "parameters": [
-                    {
-                        "name": "compra",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CompraUpsertRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Compra actualizada",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Compra"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Compras"
-                ],
-                "summary": "Eliminar compra",
-                "operationId": "99cf956680abbdc1a1bcb7f6f2cad7a8",
-                "parameters": [
-                    {
-                        "name": "compra",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Compra eliminada"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         }
     },
     "components": {
         "schemas": {
-            "LoginRequest": {
-                "required": [
-                    "email",
-                    "password"
-                ],
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "usuario@correo.com"
-                    },
-                    "password": {
-                        "type": "string",
-                        "format": "password",
-                        "example": "secret123"
-                    }
-                },
-                "type": "object"
-            },
-            "UserUpsertRequest": {
-                "required": [
-                    "name",
-                    "email",
-                    "password"
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "example": "Admin"
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "admin@correo.com"
-                    },
-                    "password": {
-                        "type": "string",
-                        "format": "password",
-                        "example": "secret123"
-                    }
-                },
-                "type": "object"
-            },
-            "ArticuloUpsertRequest": {
-                "required": [
-                    "nombre",
-                    "precio",
-                    "stock"
-                ],
-                "properties": {
-                    "nombre": {
-                        "type": "string",
-                        "example": "Laptop"
-                    },
-                    "descripcion": {
-                        "type": "string",
-                        "example": "Equipo portátil de alto rendimiento",
-                        "nullable": true
-                    },
-                    "precio": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 999.99
-                    },
-                    "stock": {
-                        "type": "integer",
-                        "example": 10
-                    }
-                },
-                "type": "object"
-            },
-            "ResenaUpsertRequest": {
-                "required": [
-                    "titulo",
-                    "puntuacion"
-                ],
-                "properties": {
-                    "titulo": {
-                        "type": "string",
-                        "example": "Excelente compra"
-                    },
-                    "contenido": {
-                        "type": "string",
-                        "example": "El producto llegó en perfectas condiciones.",
-                        "nullable": true
-                    },
-                    "puntuacion": {
-                        "type": "integer",
-                        "example": 5
-                    }
-                },
-                "type": "object"
-            },
-            "CompraUpsertRequest": {
-                "required": [
-                    "user_id",
-                    "articulo_id",
-                    "cantidad",
-                    "precio_unitario"
-                ],
-                "properties": {
-                    "user_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "articulo_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "cantidad": {
-                        "type": "integer",
-                        "example": 2
-                    },
-                    "precio_unitario": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 499.99
-                    }
-                },
-                "type": "object"
-            },
-            "TokenResponse": {
-                "properties": {
-                    "access_token": {
-                        "type": "string",
-                        "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                    },
-                    "token_type": {
-                        "type": "string",
-                        "example": "Bearer"
-                    },
-                    "expires_in": {
-                        "type": "integer",
-                        "example": 3600
-                    },
-                    "user": {
-                        "properties": {
-                            "id": {
-                                "type": "integer",
-                                "example": 1
-                            },
-                            "name": {
-                                "type": "string",
-                                "example": "Admin"
-                            },
-                            "email": {
-                                "type": "string",
-                                "format": "email",
-                                "example": "admin@correo.com"
-                            },
-                            "email_verified_at": {
-                                "type": "string",
-                                "format": "date-time",
-                                "example": "2026-07-06T12:00:00Z",
-                                "nullable": true
-                            },
-                            "created_at": {
-                                "type": "string",
-                                "format": "date-time",
-                                "nullable": true
-                            },
-                            "updated_at": {
-                                "type": "string",
-                                "format": "date-time",
-                                "nullable": true
-                            }
-                        },
-                        "type": "object"
-                    }
-                },
-                "type": "object"
-            },
-            "User": {
-                "required": [
-                    "name",
-                    "email"
-                ],
+            "Artesano": {
+                "title": "Artesano",
                 "properties": {
                     "id": {
                         "type": "integer",
                         "example": 1
                     },
-                    "name": {
+                    "nombre": {
                         "type": "string",
-                        "example": "Admin"
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "admin@correo.com"
-                    },
-                    "email_verified_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2026-07-06T12:00:00Z",
-                        "nullable": true
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "example": "María López"
                     }
                 },
                 "type": "object"
             },
             "Articulo": {
-                "required": [
-                    "nombre",
-                    "precio",
-                    "stock"
-                ],
+                "title": "Articulo",
                 "properties": {
                     "id": {
                         "type": "integer",
@@ -1058,109 +600,122 @@
                     },
                     "nombre": {
                         "type": "string",
-                        "example": "Laptop"
+                        "example": "Huipil bordado de Oaxaca"
+                    },
+                    "talla": {
+                        "type": "string",
+                        "example": "M"
+                    },
+                    "color": {
+                        "type": "string",
+                        "example": "Rojo"
+                    },
+                    "bordado": {
+                        "type": "string",
+                        "example": "Punto de cruz"
+                    },
+                    "tela": {
+                        "type": "string",
+                        "example": "Manta"
+                    },
+                    "region": {
+                        "type": "string",
+                        "example": "Oaxaca"
+                    },
+                    "categoria": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "nombre": {
+                                "type": "string",
+                                "example": "Textiles"
+                            },
+                            "descripcion": {
+                                "type": "string",
+                                "example": "Prendas tejidas a mano"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "artesano": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "nombre": {
+                                "type": "string",
+                                "example": "María López"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "tienda": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "nombre": {
+                                "type": "string",
+                                "example": "Artesanías del Sur"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "imagenes": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "example": "https://images.unsplash.com/photo-123?w=800"
+                                },
+                                "es_principal": {
+                                    "type": "boolean",
+                                    "example": true
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "Categoria": {
+                "title": "Categoria",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Textiles"
                     },
                     "descripcion": {
                         "type": "string",
-                        "example": "Equipo portátil de alto rendimiento",
-                        "nullable": true
-                    },
-                    "precio": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 999.99
-                    },
-                    "stock": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "example": "Prendas tejidas a mano"
                     }
                 },
                 "type": "object"
             },
-            "Resena": {
-                "required": [
-                    "titulo",
-                    "puntuacion"
-                ],
+            "Tienda": {
+                "title": "Tienda",
                 "properties": {
                     "id": {
                         "type": "integer",
                         "example": 1
                     },
-                    "titulo": {
+                    "nombre": {
                         "type": "string",
-                        "example": "Excelente compra"
-                    },
-                    "contenido": {
-                        "type": "string",
-                        "example": "El producto llegó en perfectas condiciones.",
-                        "nullable": true
-                    },
-                    "puntuacion": {
-                        "type": "integer",
-                        "example": 5
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
-            "Compra": {
-                "required": [
-                    "user_id",
-                    "articulo_id",
-                    "cantidad",
-                    "precio_unitario"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "user_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "articulo_id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "cantidad": {
-                        "type": "integer",
-                        "example": 2
-                    },
-                    "precio_unitario": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 499.99
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "nullable": true
+                        "example": "Artesanías del Sur"
                     }
                 },
                 "type": "object"
@@ -1176,24 +731,28 @@
     },
     "tags": [
         {
-            "name": "Auth",
-            "description": "Auth"
+            "name": "Artesanos",
+            "description": "Artesanos"
         },
         {
             "name": "Articulos",
             "description": "Articulos"
         },
         {
-            "name": "Resenas",
-            "description": "Resenas"
+            "name": "Auth",
+            "description": "Auth"
         },
         {
-            "name": "Usuarios",
-            "description": "Usuarios"
+            "name": "Categorias",
+            "description": "Categorias"
         },
         {
-            "name": "Compras",
-            "description": "Compras"
+            "name": "Chatbot",
+            "description": "Chatbot"
+        },
+        {
+            "name": "Tiendas",
+            "description": "Tiendas"
         }
     ]
 }

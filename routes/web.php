@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatbotController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -39,5 +40,8 @@ Route::middleware(['auth', 'verified'])
     ->group(function () {
         Route::view('/dashboard', 'user.dashboard')->name('dashboard');
     });
+
+Route::match(['get', 'post'], '/chatbot', [ChatbotController::class, 'handle']);
+
 
 require __DIR__ . '/auth.php';

@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: ['chatbot']);
+
         // No redirigir guests de la API a la ruta web /login.
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->is('api/*')) {
