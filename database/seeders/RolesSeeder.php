@@ -71,6 +71,22 @@ class RolesSeeder extends Seeder
             'eliminarCompras',
         ]);
 
+        $vendedor = Role::firstOrCreate(['name' => 'vendedor']);
+        $vendedor->syncPermissions([
+            'verArticulos',
+            'crearArticulos',
+            'editarArticulos',
+            'eliminarArticulos',
+            'verResenas',
+            'crearResenas',
+            'editarResenas',
+            'eliminarResenas',
+            'verCompras',
+            'crearCompras',
+            'editarCompras',
+            'eliminarCompras',
+        ]);
+
         $guest = Role::firstOrCreate(['name' => 'guest']);
         $guest->syncPermissions([
             'verArticulos',

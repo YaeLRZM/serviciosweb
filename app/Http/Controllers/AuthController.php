@@ -42,21 +42,46 @@ class AuthController extends Controller
             new OA\Response(response: 401, description: 'Credenciales inválidas'),
         ]
     )]
+    
     public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|string',
+    ]);
 
-        $credentials = $request->only('email', 'password');
+    $credentials = $request->only('email', 'password');
 
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Credenciales inválidas'], 401);
-        }
-
-        return $this->respondWithToken($token);
+    if (!$token = Auth::guard('api')->attempt($credentials)) {
+        return response()->json(['error' => 'Credenciales inválidas'], 401);
     }
+
+    $user = Auth::guard('api')->user();
+    $role = $user->getRoleNames()->first() ?? 'cliente';
+
+    // Bloquear acceso a Admin desde la App Móvil
+    if ($role === 'admin') {
+        Auth::guard('api')->logout(); // Cerramos la sesión
+        return response()->json([
+            'success' => false,
+            'message' => 'Los administradores deben usar el panel web.',
+            'role' => 'admin'
+        ], 403);
+    }
+
+    return response()->json([
+        'success' => true,
+        'access_token' => $token,
+        'token_type' => 'bearer',
+        'expires_in' => config('jwt.ttl') * 60,
+        'role' => $role,
+        'user' => [
+            'id' => $user->id,
+            'nombre' => $user->nombre,
+            'email' => $user->email,
+        ]
+    ]);
+}
 
     /**
      * Obtener el usuario autenticado.
