@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreArticuloRequest;
 use App\Http\Requests\UpdateArticuloRequest;
 use App\Http\Resources\ArticuloResource;
+use App\Models\Artesano;
 use App\Models\Articulo;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -133,11 +134,47 @@ class ArticuloController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Crear artículo (JWT + crearArticulos).
+     * tienda_id se toma del vendedor autenticado (no del body).
      */
     public function store(StoreArticuloRequest $request)
     {
-        //
+        $user = $request->user('api');
+        $user->loadMissing('vendedor');
+
+        $tiendaId = $user->vendedor?->tienda_id;
+        if (! $tiendaId && ! $user->hasRole('admin')) {
+            abort(403, 'El vendedor no tiene tienda asignada.');
+        }
+
+        // Admin sin vendedor: no prioridad móvil; exigir que exista vendedor.tienda
+        // o fallar de forma clara.
+        if (! $tiendaId) {
+            abort(422, 'No se pudo resolver tienda_id para el usuario autenticado.');
+        }
+
+        $data = $request->validated();
+        unset($data['tienda_id']); // nunca confiar en el cliente
+
+        $data['tienda_id'] = (int) $tiendaId;
+        $data['disponible'] = array_key_exists('disponible', $data)
+            ? (bool) $data['disponible']
+            : true;
+        $data['talla'] = $data['talla'] ?? 'Único';
+        $data['region'] = $data['region'] ?? 'Oaxaca';
+        $data['artesano_id'] = $data['artesano_id']
+            ?? Artesano::query()->orderBy('id')->value('id');
+
+        if (! $data['artesano_id']) {
+            abort(422, 'No hay artesanos en el catálogo; no se puede crear el artículo.');
+        }
+
+        $articulo = Articulo::create($data);
+        $articulo->load(['categoria', 'artesano', 'tienda', 'imagenes']);
+
+        return (new ArticuloResource($articulo))
+            ->response()
+            ->setStatusCode(201);
     }
 
     #[OA\Get(

@@ -5,65 +5,97 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreImagenArticuloRequest;
 use App\Http\Requests\UpdateImagenArticuloRequest;
 use App\Models\ImagenArticulo;
+use Illuminate\Support\Facades\DB;
 
 class ImagenArticuloController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return ImagenArticulo::all();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Crea (o reemplaza como principal) una imagen por URL del artículo.
+     * Alcance mínimo: una imagen principal por producto.
      */
     public function store(StoreImagenArticuloRequest $request)
     {
-        $imagenArticulo = ImagenArticulo::create($request->validated());
-        return response()->json(['message' => 'Imagen de artículo creada correctamente', 'imagenArticulo' => $imagenArticulo], 201);
+        $data = $request->validated();
+        $esPrincipal = array_key_exists('es_principal', $data)
+            ? (bool) $data['es_principal']
+            : true;
+
+        $imagen = DB::transaction(function () use ($data, $esPrincipal) {
+            $articuloId = (int) $data['articulo_id'];
+
+            if ($esPrincipal) {
+                // Una sola principal: desmarca las demás.
+                ImagenArticulo::query()
+                    ->where('articulo_id', $articuloId)
+                    ->update(['es_principal' => false]);
+            }
+
+            // Si ya hay una imagen principal y pedimos principal, actualizamos
+            // la primera principal/histórica para no acumular filas basura.
+            if ($esPrincipal) {
+                $existing = ImagenArticulo::query()
+                    ->where('articulo_id', $articuloId)
+                    ->orderByDesc('es_principal')
+                    ->orderBy('id')
+                    ->first();
+
+                if ($existing) {
+                    $existing->update([
+                        'url' => $data['url'],
+                        'es_principal' => true,
+                    ]);
+
+                    return $existing->fresh();
+                }
+            }
+
+            return ImagenArticulo::create([
+                'articulo_id' => $articuloId,
+                'url' => $data['url'],
+                'es_principal' => $esPrincipal,
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Imagen de artículo guardada correctamente',
+            'imagenArticulo' => $imagen,
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(ImagenArticulo $imagenArticulo)
     {
         return response()->json(['imagenArticulo' => $imagenArticulo], 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(ImagenArticulo $imagenArticulo)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateImagenArticuloRequest $request, ImagenArticulo $imagenArticulo)
     {
         $imagenArticulo->update($request->validated());
-        return response()->json(['message' => 'Imagen de artículo actualizada correctamente', 'imagenArticulo' => $imagenArticulo], 200);
+
+        return response()->json([
+            'message' => 'Imagen de artículo actualizada correctamente',
+            'imagenArticulo' => $imagenArticulo,
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(ImagenArticulo $imagenArticulo)
     {
         $imagenArticulo->delete();
+
         return response()->json(['message' => 'Imagen de artículo eliminada correctamente'], 200);
     }
 }

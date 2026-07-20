@@ -77,6 +77,8 @@ class RolesSeeder extends Seeder
             'crearArticulos',
             'editarArticulos',
             'eliminarArticulos',
+            // Solo editar (no crear/eliminar) tiendas: ownership en UpdateTiendaRequest.
+            'editarTiendas',
             'verResenas',
             'crearResenas',
             'editarResenas',
