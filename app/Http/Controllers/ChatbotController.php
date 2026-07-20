@@ -69,11 +69,24 @@ class ChatbotController extends Controller
         $botman = app('botman');
 
         $botman->hears('hola', function ($bot) {
-            $bot->reply('¡Hola! Soy el asistente de artículos. Dime qué buscas: color, región, tipo de bordado o tela.');
+            $bot->reply(
+                '¡Hola! Soy el asistente de Ixé Moda. Puedo ayudarte a explorar prendas y textiles de Oaxaca. '
+                .'Dime un color, una comunidad o región de Oaxaca, o un estilo de bordado.'
+            );
         });
 
         $botman->fallback(function ($bot) {
             $texto = mb_strtolower($bot->getMessage()->getText());
+
+            // Catálogo solo Oaxaca: avisar si piden otro estado.
+            if ($this->mencionaFueraDeOaxaca($texto)) {
+                $bot->reply(
+                    'Por ahora solo puedo ayudarte con prendas y textiles de Oaxaca. '
+                    .'Si quieres, dime un color, una comunidad o un tipo de bordado de Oaxaca.'
+                );
+
+                return;
+            }
 
             $articulos = Articulo::with(['categoria', 'artesano', 'tienda', 'imagenes'])
                 ->when($this->buscar($texto, ['rojo', 'azul', 'verde', 'negro', 'blanco']),
@@ -86,13 +99,27 @@ class ChatbotController extends Controller
                 ->get();
 
             if ($articulos->isEmpty()) {
-                $bot->reply('No encontré artículos con esa descripción. Prueba con un color, región o tipo de bordado.');
+                $bot->reply(
+                    'No encontré prendas o textiles que coincidan con eso por ahora. '
+                    .'Prueba con un color, una comunidad o región de Oaxaca, o un tipo de bordado, '
+                    .'y te muestro opciones del catálogo.'
+                );
 
                 return;
             }
 
+            $n = $articulos->count();
+            $bot->reply(
+                $n === 1
+                    ? 'Encontré esta pieza que podría interesarte:'
+                    : "Encontré {$n} piezas que podrían interesarte:"
+            );
+
             foreach ($articulos as $a) {
-                $bot->reply("{$a->nombre} — {$a->color}, {$a->region} ({$a->tienda?->nombre})");
+                $tienda = $a->tienda?->nombre ?: 'tienda local';
+                $color = $a->color ?: 'color no indicado';
+                $region = $a->region ?: 'región no indicada';
+                $bot->reply("• {$a->nombre} — {$color}, {$region} (en {$tienda})");
             }
         });
 
@@ -146,5 +173,34 @@ class ChatbotController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Detección simple de estados fuera del alcance del catálogo (Oaxaca).
+     */
+    private function mencionaFueraDeOaxaca(string $texto): bool
+    {
+        $fuera = [
+            'chiapas',
+            'puebla',
+            'jalisco',
+            'yucatán',
+            'yucatan',
+            'veracruz',
+            'guerrero',
+            'michoacán',
+            'michoacan',
+            'cdmx',
+            'ciudad de méxico',
+            'ciudad de mexico',
+        ];
+
+        foreach ($fuera as $estado) {
+            if (str_contains($texto, $estado)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
