@@ -85,10 +85,14 @@ class AuthController extends Controller
 
     /**
      * Obtener el usuario autenticado.
+     * Incluye vendedor.tienda cuando aplica (panel "Mis productos").
      */
     public function me()
     {
-        return response()->json(auth('api')->user());
+        $user = auth('api')->user();
+        $user?->load(['vendedor.tienda']);
+
+        return response()->json($user);
     }
 
     /**

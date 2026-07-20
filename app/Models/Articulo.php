@@ -18,6 +18,7 @@ class Articulo extends Model
         'descripcion',
         'precio',
         'stock',
+        'disponible',
         'talla',
         'color',
         'bordado',
@@ -28,6 +29,7 @@ class Articulo extends Model
     protected $casts = [
         'precio' => 'decimal:2',
         'stock' => 'integer',
+        'disponible' => 'boolean',
     ];
 
     public function categoria()

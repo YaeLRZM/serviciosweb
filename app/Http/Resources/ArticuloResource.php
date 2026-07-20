@@ -15,6 +15,7 @@ class ArticuloResource extends JsonResource
             'descripcion' => $this->descripcion,
             'precio' => $this->precio,
             'stock' => $this->stock,
+            'disponible' => (bool) ($this->disponible ?? true),
             'talla' => $this->talla,
             'color' => $this->color,
             'bordado' => $this->bordado,

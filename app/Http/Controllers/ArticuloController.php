@@ -106,6 +106,27 @@ class ArticuloController extends Controller
             ->when($request->filled('bordado'), fn ($q) => $q->where('bordado', $request->input('bordado')))
             ->when($request->filled('tela'), fn ($q) => $q->where('tela', $request->input('tela')))
             ->when($request->filled('region'), fn ($q) => $q->where('region', $request->input('region')))
+            // Catálogo público: solo publicados. Vendedor usa incluir_no_disponibles=1.
+            ->when(
+                ! $request->boolean('incluir_no_disponibles'),
+                fn ($q) => $q->where('disponible', true)
+            )
+            // Búsqueda simple por texto: ?q=huipil|rebozo|tlacolula...
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $raw = trim((string) $request->input('q'));
+                if ($raw === '') {
+                    return;
+                }
+                $term = '%'.addcslashes($raw, '%_\\').'%';
+                $q->where(function ($w) use ($term) {
+                    $w->where('nombre', 'ilike', $term)
+                        ->orWhere('region', 'ilike', $term)
+                        ->orWhere('color', 'ilike', $term)
+                        ->orWhere('bordado', 'ilike', $term)
+                        ->orWhere('tela', 'ilike', $term)
+                        ->orWhere('descripcion', 'ilike', $term);
+                });
+            })
             ->get();
 
         return ArticuloResource::collection($articulos);
@@ -140,9 +161,57 @@ class ArticuloController extends Controller
     )]
     public function show(Articulo $articulo)
     {
+        // Ocultos (disponible=false): solo vendedor dueño de la tienda o admin.
+        if (! $articulo->disponible) {
+            if (! $this->puedeVerArticuloOculto($articulo)) {
+                abort(404, 'Artículo no encontrado');
+            }
+        }
+
         $articulo->load(['categoria', 'artesano', 'tienda', 'imagenes']);
 
         return new ArticuloResource($articulo);
+    }
+
+    /**
+     * JWT opcional en ruta pública: admin o vendedor de la misma tienda.
+     */
+    private function puedeVerArticuloOculto(Articulo $articulo): bool
+    {
+        $user = $this->optionalApiUser();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        $user->loadMissing('vendedor');
+        $tiendaId = $user->vendedor?->tienda_id;
+
+        return $tiendaId
+            && (int) $tiendaId === (int) $articulo->tienda_id;
+    }
+
+    /**
+     * Resuelve usuario JWT si viene Bearer (ruta sin middleware auth:api).
+     */
+    private function optionalApiUser(): ?\App\Models\User
+    {
+        $token = request()->bearerToken();
+        if (! $token) {
+            return null;
+        }
+
+        try {
+            /** @var \App\Models\User|null $user */
+            $user = auth('api')->setToken($token)->user();
+
+            return $user;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

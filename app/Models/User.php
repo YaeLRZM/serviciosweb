@@ -86,6 +86,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Carrito::class);
     }
 
+    /** Perfil de vendedor (si el usuario tiene rol vendedor). */
+    public function vendedor()
+    {
+        return $this->hasOne(Vendedor::class);
+    }
+
     public function resenas()
     {
         return $this->hasMany(Resena::class);
