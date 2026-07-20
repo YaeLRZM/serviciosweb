@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    /*
+    | Google Gemini (server-side only).
+    | Set GEMINI_API_KEY in .env — never hardcode or expose to Flutter Web.
+    */
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
+    ],
+
 ];
