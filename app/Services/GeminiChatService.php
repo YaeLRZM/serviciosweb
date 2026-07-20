@@ -72,6 +72,16 @@ TXT;
                     ],
                 ]);
 
+            // 429: cuota / rate limit — fallback silencioso al bot de reglas.
+            if ($response->status() === 429) {
+                Log::warning('Gemini rate limit reached', [
+                    'status' => 429,
+                    'retry_after' => $response->header('Retry-After'),
+                ]);
+
+                return null;
+            }
+
             if (! $response->successful()) {
                 Log::warning('Gemini chat HTTP error', [
                     'status' => $response->status(),
