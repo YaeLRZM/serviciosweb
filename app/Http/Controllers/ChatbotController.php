@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Articulo;
+use App\Services\GeminiChatService;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class ChatbotController extends Controller
@@ -10,8 +12,8 @@ class ChatbotController extends Controller
     #[OA\Post(
         path: '/chatbot',
         summary: 'Asistente conversacional de artículos (público)',
-        description: 'Recibe un mensaje del usuario y responde consultando el catálogo de artículos. '
-            . 'Usa el formato del driver web de BotMan. Detecta color, región y tipo de bordado en el texto.',
+        description: 'Recibe un mensaje del usuario. Intenta Gemini si hay API key; '
+            . 'si no, o si Gemini falla, usa BotMan + catálogo (reglas).',
         tags: ['Chatbot'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -51,8 +53,19 @@ class ChatbotController extends Controller
             ),
         ]
     )]
-    public function handle()
+    public function handle(Request $request, GeminiChatService $gemini)
     {
+        $userText = $this->extractUserText($request);
+
+        // 1) Gemini (si hay key y responde). Formato compatible con Flutter/BotMan web.
+        if ($userText !== '') {
+            $geminiText = $gemini->reply($userText);
+            if (is_string($geminiText) && $geminiText !== '') {
+                return response()->json($this->botmanShape([$geminiText]));
+            }
+        }
+
+        // 2) Fallback: bot de reglas actual (BotMan + Eloquent).
         $botman = app('botman');
 
         $botman->hears('hola', function ($bot) {
@@ -63,9 +76,9 @@ class ChatbotController extends Controller
             $texto = mb_strtolower($bot->getMessage()->getText());
 
             $articulos = Articulo::with(['categoria', 'artesano', 'tienda', 'imagenes'])
-                ->when($this->buscar($texto, ['rojo','azul','verde','negro','blanco']),
+                ->when($this->buscar($texto, ['rojo', 'azul', 'verde', 'negro', 'blanco']),
                     fn ($q, $v) => $q->whereRaw('LOWER(color) = ?', [$v]))
-                ->when($this->buscar($texto, ['oaxaca','chiapas','puebla','yucatán']),
+                ->when($this->buscar($texto, ['oaxaca', 'chiapas', 'puebla', 'yucatán']),
                     fn ($q, $v) => $q->whereRaw('LOWER(region) = ?', [$v]))
                 ->when(str_contains($texto, 'punto de cruz'),
                     fn ($q) => $q->whereRaw('LOWER(bordado) = ?', ['punto de cruz']))
@@ -74,6 +87,7 @@ class ChatbotController extends Controller
 
             if ($articulos->isEmpty()) {
                 $bot->reply('No encontré artículos con esa descripción. Prueba con un color, región o tipo de bordado.');
+
                 return;
             }
 
@@ -85,11 +99,52 @@ class ChatbotController extends Controller
         $botman->listen();
     }
 
+    /**
+     * Extrae texto del payload BotMan web (message string o {text: ...}).
+     */
+    private function extractUserText(Request $request): string
+    {
+        $message = $request->input('message');
+
+        if (is_array($message)) {
+            return trim((string) ($message['text'] ?? ''));
+        }
+
+        return trim((string) ($message ?? ''));
+    }
+
+    /**
+     * Shape JSON que ya consume Flutter (ChatbotService).
+     *
+     * @param  list<string>  $texts
+     * @return array{status: int, messages: list<array{type: string, text: string, attachment: null, additionalParameters: array}>}
+     */
+    private function botmanShape(array $texts): array
+    {
+        $messages = [];
+        foreach ($texts as $text) {
+            $messages[] = [
+                'type' => 'text',
+                'text' => $text,
+                'attachment' => null,
+                'additionalParameters' => [],
+            ];
+        }
+
+        return [
+            'status' => 200,
+            'messages' => $messages,
+        ];
+    }
+
     private function buscar(string $texto, array $opciones): ?string
     {
         foreach ($opciones as $o) {
-            if (str_contains($texto, $o)) return $o;
+            if (str_contains($texto, $o)) {
+                return $o;
+            }
         }
+
         return null;
     }
 }
