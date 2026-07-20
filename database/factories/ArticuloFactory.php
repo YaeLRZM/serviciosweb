@@ -17,16 +17,21 @@ class ArticuloFactory extends Factory
      */
     public function definition(): array
     {
+        $nombre = $this->faker->words(3, true);
+
         return [
             'categoria_id' => \App\Models\Categoria::query()->inRandomOrder()->value('id') ?? \App\Models\Categoria::factory(),
             'artesano_id' => \App\Models\Artesano::query()->inRandomOrder()->value('id') ?? \App\Models\Artesano::factory(),
             'tienda_id' => \App\Models\Tienda::query()->inRandomOrder()->value('id') ?? \App\Models\Tienda::factory(),
-            'nombre' => $this->faker->word(),
-            'talla' => $this->faker->word(),
-            'color' => $this->faker->word(),
+            'nombre' => $nombre,
+            'descripcion' => $this->faker->sentence(12),
+            'precio' => $this->faker->randomFloat(2, 150, 2500),
+            'stock' => $this->faker->numberBetween(1, 40),
+            'talla' => $this->faker->randomElement(['XS', 'S', 'M', 'L', 'XL', 'Única']),
+            'color' => $this->faker->safeColorName(),
             'bordado' => $this->faker->word(),
             'tela' => $this->faker->word(),
-            'region' => $this->faker->word(),
+            'region' => $this->faker->randomElement(['Oaxaca', 'Chiapas', 'Puebla', 'Michoacán', 'Yucatán']),
         ];
     }
 }

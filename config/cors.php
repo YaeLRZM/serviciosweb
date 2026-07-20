@@ -16,7 +16,8 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'chatbot'],
 
-    'allowed_methods' => ['*'],
+    // Métodos HTTP usados por la API (incluye preflight OPTIONS).
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => [
         'http://localhost:3000',   // frontend Express de client/
@@ -27,18 +28,24 @@ return [
         'http://127.0.0.1:8000',
     ],
 
-    'allowed_origins_patterns' => [],
+    // Flutter Web en Chrome usa un puerto dinámico (http://localhost:xxxxx).
+    // Con supports_credentials=true no se puede usar '*'; los patrones
+    // permiten cualquier puerto de localhost / 127.0.0.1 en desarrollo.
+    'allowed_origins_patterns' => [
+        '#^http://localhost(:\d+)?$#',
+        '#^http://127\.0\.0\.1(:\d+)?$#',
+    ],
 
-    // 4. Cabeceras de request permitidas (incluye Authorization para el JWT).
-    'allowed_headers' => ['*'],
+    // Cabeceras de request necesarias (Content-Type, Accept, Authorization/JWT).
+    'allowed_headers' => ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'Origin'],
 
     'exposed_headers' => [],
 
     'max_age' => 0,
 
-    // 5. true si el frontend envía cookies o el token JWT (Authorization).
-    //    Nota: con esto en true, allowed_origins NO puede ser ['*'],
-    //    deben ser orígenes explícitos como los de arriba.
+    // true si el frontend envía cookies o el token JWT (Authorization).
+    // Nota: con esto en true, allowed_origins NO puede ser ['*'],
+    // deben ser orígenes explícitos o allowed_origins_patterns.
     'supports_credentials' => true,
 
 ];
