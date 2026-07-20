@@ -31,7 +31,15 @@ class ArticuloFactory extends Factory
             'color' => $this->faker->safeColorName(),
             'bordado' => $this->faker->word(),
             'tela' => $this->faker->word(),
-            'region' => $this->faker->randomElement(['Oaxaca', 'Chiapas', 'Puebla', 'Michoacán', 'Yucatán']),
+            // Solo Oaxaca (comunidades); no usar otros estados en datos de prueba residuales.
+            'region' => $this->faker->randomElement([
+                'Oaxaca de Juárez',
+                'Teotitlán del Valle',
+                'San Antonino Castillo Velasco',
+                'Juchitán de Zaragoza',
+                'Tlaxiaco',
+                'Tlacolula de Matamoros',
+            ]),
         ];
     }
 }

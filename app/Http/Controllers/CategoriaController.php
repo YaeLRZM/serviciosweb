@@ -33,7 +33,11 @@ class CategoriaController extends Controller
     )]
     public function index()
     {
-        return Categoria::all();
+        // Catálogo público: solo categorías visibles (prendas/textiles sembradas).
+        return Categoria::query()
+            ->where('visible', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'descripcion', 'imagen', 'visible']);
     }
 
     /**
