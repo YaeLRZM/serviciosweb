@@ -307,7 +307,24 @@ class ArticuloController extends Controller
     )]
     public function destroy(Articulo $articulo)
     {
-        abort_unless(request()->user('api')?->hasPermissionTo('eliminarArticulos', 'web'), 403, 'No autorizado');
+        $user = request()->user('api');
+        abort_unless(
+            $user?->hasPermissionTo('eliminarArticulos', 'web'),
+            403,
+            'No autorizado'
+        );
+
+        // Ownership: admin puede todo; vendedor solo artículos de su tienda
+        // (misma lógica de seguridad que UpdateArticuloRequest).
+        if (! $user->hasRole('admin')) {
+            $user->loadMissing('vendedor');
+            $tiendaId = $user->vendedor?->tienda_id;
+            abort_unless(
+                $tiendaId && (int) $tiendaId === (int) $articulo->tienda_id,
+                403,
+                'No autorizado'
+            );
+        }
 
         $articulo->delete();
 

@@ -84,7 +84,13 @@ class VentaController extends Controller
             return response()->json(['message' => 'This action is unauthorized.'], 403);
         }
 
-        $venta->load(['detalle_ventas']);
+        // Enriquecimiento mínimo y seguro (solo ids + nombres reales).
+        // Ownership ya validado arriba; no se expone más de lo necesario.
+        $venta->load([
+            'detalle_ventas.articulo:id,nombre',
+            'user:id,nombre',
+            'forma_pago:id,nombre',
+        ]);
 
         return response()->json(['venta' => $venta], 200);
     }

@@ -22,6 +22,7 @@ class DetalleVenta extends Model
     }
     public function articulo()
     {
-        return $this->belongsTo(Producto::class);
+        // articulo_id → articulos (no existe modelo Producto).
+        return $this->belongsTo(Articulo::class);
     }
 }
