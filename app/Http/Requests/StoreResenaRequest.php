@@ -20,10 +20,11 @@ class StoreResenaRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Alineado al modelo/migración: articulo_id, calificacion, comentario.
         return [
-            'titulo' => ['required', 'string', 'max:255'],
-            'contenido' => ['nullable', 'string'],
-            'puntuacion' => ['required', 'integer', 'min:1', 'max:5'],
+            'articulo_id' => ['required', 'integer', 'exists:articulos,id'],
+            'calificacion' => ['required', 'integer', 'min:1', 'max:5'],
+            'comentario' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

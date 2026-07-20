@@ -33,6 +33,8 @@ Route::apiResource('articulos', ArticuloController::class)->only(['index', 'show
 Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
 Route::apiResource('artesanos', ArtesanoController::class)->only(['index', 'show']);
 Route::apiResource('tiendas', TiendaController::class)->only(['index', 'show']);
+// Lectura pública de reseñas (escritura sigue en auth:api).
+Route::apiResource('resenas', ResenaController::class)->only(['index', 'show']);
 
 
 Route::middleware('auth:api')->group(function () {
@@ -68,7 +70,7 @@ Route::middleware('auth:api')->group(function () {
     - Categorias: index, show
     - Ventas: index, show
     */
-    Route::apiResource('resenas', ResenaController::class);
+    Route::apiResource('resenas', ResenaController::class)->except(['index', 'show']);
     Route::apiResource('carritos', CarritoController::class);
     Route::apiResource('detalle-carritos', DetalleCarritoController::class);
     Route::apiResource('direcciones', DireccionController::class);

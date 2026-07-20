@@ -12,6 +12,7 @@ class TiendaResource extends JsonResource
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
+            'descripcion' => $this->descripcion,
         ];
     }
 }

@@ -5,65 +5,72 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResenaRequest;
 use App\Http\Requests\UpdateResenaRequest;
 use App\Models\Resena;
+use Illuminate\Http\Request;
 
 class ResenaController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Listado público. Filtro opcional: ?articulo_id=
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Resena::all();
+        $query = Resena::query()->with(['user:id,nombre,email'])->latest();
+
+        if ($request->filled('articulo_id')) {
+            $query->where('articulo_id', (int) $request->input('articulo_id'));
+        }
+
+        return $query->get();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Crear reseña (JWT + permiso crearResenas).
+     * user_id se toma del token; no se acepta del body.
      */
     public function store(StoreResenaRequest $request)
     {
-        $resena = Resena::create($request->validated());
-        return response()->json(['message' => 'Reseña creada correctamente', 'resena' => $resena], 201);
+        $data = $request->validated();
+        $data['user_id'] = auth('api')->id();
+        // Columna comentario es NOT NULL en migración.
+        $data['comentario'] = $data['comentario'] ?? '';
+
+        $resena = Resena::create($data);
+        $resena->load(['user:id,nombre,email']);
+
+        return response()->json([
+            'message' => 'Reseña creada correctamente',
+            'resena' => $resena,
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Resena $resena)
     {
+        $resena->load(['user:id,nombre,email']);
+
         return response()->json(['resena' => $resena], 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Resena $resena)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateResenaRequest $request, Resena $resena)
     {
         $resena->update($request->validated());
+
         return response()->json(['message' => 'Reseña actualizada correctamente', 'resena' => $resena], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Resena $resena)
     {
         $resena->delete();
+
         return response()->json(['message' => 'Reseña eliminada correctamente'], 200);
     }
 }
