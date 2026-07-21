@@ -70,4 +70,15 @@ class Articulo extends Model
     {
         return $this->hasMany(ImagenArticulo::class);
     }
+
+    public function favoritos()
+    {
+        return $this->hasMany(Favorito::class);
+    }
+
+    public function usuariosQueFavoritan()
+    {
+        return $this->belongsToMany(User::class, 'favoritos')
+            ->withTimestamps();
+    }
 }

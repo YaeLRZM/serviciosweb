@@ -27,6 +27,7 @@ use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\MiCarritoController;
+use App\Http\Controllers\FavoritoController;
 
 Route::post('login', [AuthController::class, 'login']);
 // Registro público de comprador (rol `user`). No usa /usuarios (admin-only).
@@ -61,6 +62,11 @@ Route::middleware('auth:api')->group(function () {
     Route::patch('mi-carrito/items/{articuloId}', [MiCarritoController::class, 'actualizar']);
     Route::delete('mi-carrito/items/{articuloId}', [MiCarritoController::class, 'quitar']);
     Route::delete('mi-carrito', [MiCarritoController::class, 'vaciar']);
+
+    // Favoritos del usuario autenticado (persistidos en BD).
+    Route::get('favoritos', [FavoritoController::class, 'index']);
+    Route::post('favoritos', [FavoritoController::class, 'store']);
+    Route::delete('favoritos/{articuloId}', [FavoritoController::class, 'destroy']);
 
     // Opiniones del usuario autenticado.
     Route::get('mis-resenas', [ResenaController::class, 'mias']);
