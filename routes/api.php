@@ -63,7 +63,11 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('mi-carrito', [MiCarritoController::class, 'vaciar']);
 
     // Opiniones del usuario autenticado.
-    Route::get('mis-resenas', [\App\Http\Controllers\ResenaController::class, 'mias']);
+    Route::get('mis-resenas', [ResenaController::class, 'mias']);
+    // Alias de producto: editar/borrar “opiniones” (mismo modelo resenas).
+    Route::put('opiniones/{resena}', [ResenaController::class, 'update']);
+    Route::patch('opiniones/{resena}', [ResenaController::class, 'update']);
+    Route::delete('opiniones/{resena}', [ResenaController::class, 'destroy']);
     
     /*
     *****************************************    

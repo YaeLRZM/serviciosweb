@@ -12,14 +12,11 @@ class UpdateResenaRequest extends FormRequest
     use AuthorizesApiPermission;
 
     /**
-     * Solo el autor de la reseña (o admin) con permiso editarResenas.
+     * Solo el autor de la reseña o un administrador.
+     * (No hace falta el permiso Spatie si es el dueño: evita 403 innecesarios.)
      */
     public function authorize(): bool
     {
-        if (! $this->allowIfCan('editarResenas')) {
-            return false;
-        }
-
         $user = $this->user('api');
         if (! $user) {
             return false;

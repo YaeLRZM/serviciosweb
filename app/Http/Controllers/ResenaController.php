@@ -85,10 +85,21 @@ class ResenaController extends Controller
     public function update(UpdateResenaRequest $request, Resena $resena)
     {
         // Ownership del autor en UpdateResenaRequest.
-        $resena->update($request->validated());
-        $resena->load(['user:id,nombre,email']);
+        $data = $request->validated();
+        // No permitir cambiar autor ni artículo.
+        unset($data['user_id'], $data['articulo_id']);
 
-        return response()->json(['message' => 'Reseña actualizada correctamente', 'resena' => $resena], 200);
+        if (array_key_exists('comentario', $data) && $data['comentario'] === null) {
+            $data['comentario'] = '';
+        }
+
+        $resena->update($data);
+        $resena->load(['user:id,nombre,email', 'articulo:id,nombre']);
+
+        return response()->json([
+            'message' => 'Opinión actualizada correctamente',
+            'resena' => $resena,
+        ], 200);
     }
 
     public function destroy(Request $request, Resena $resena)
@@ -98,16 +109,20 @@ class ResenaController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $canDelete = $user->hasPermissionTo('eliminarResenas', 'web');
         $isOwner = (int) $resena->user_id === (int) $user->id;
         $isAdmin = $user->hasRole('admin');
 
-        if (! $canDelete || (! $isOwner && ! $isAdmin)) {
-            return response()->json(['message' => 'This action is unauthorized.'], 403);
+        // Solo el dueño o un admin pueden borrar.
+        if (! $isOwner && ! $isAdmin) {
+            return response()->json([
+                'message' => 'No puedes eliminar esta opinión.',
+            ], 403);
         }
 
         $resena->delete();
 
-        return response()->json(['message' => 'Reseña eliminada correctamente'], 200);
+        return response()->json([
+            'message' => 'Opinión eliminada correctamente',
+        ], 200);
     }
 }
