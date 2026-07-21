@@ -80,8 +80,8 @@ class VentaController extends Controller
      * - user_id del token
      * - tienda_id derivada de los artículos (una sola tienda por compra)
      * - total calculado en servidor
-     * - stock validado y decrementado en transacción
-     * - estado: completada (sin pasarela de pago)
+     * - stock validado y decrementado (reserva) en transacción
+     * - estado inicial: pendiente (cancelable por el comprador)
      */
     public function store(StoreVentaRequest $request)
     {
@@ -171,8 +171,8 @@ class VentaController extends Controller
                 'forma_pago_id' => $formaPagoId,
                 'tienda_id' => $tiendaId,
                 'total' => round($total, 2),
-                // Sin pasarela: la compra se registra como completada.
-                'estado' => 'completada',
+                // Pago de prueba en app: queda pendiente y es cancelable.
+                'estado' => 'pendiente',
             ]);
 
             foreach ($lineas as $linea) {
@@ -230,6 +230,85 @@ class VentaController extends Controller
         ]);
 
         return response()->json(['venta' => $venta], 200);
+    }
+
+    /**
+     * Cancela una compra del comprador dueño.
+     * - Solo user_id dueño (o admin)
+     * - Solo estado pendiente
+     * - Restaura stock y re-publica artículo si stock > 0
+     */
+    public function cancelar(Request $request, Venta $venta)
+    {
+        $user = $request->user('api');
+        if (! $user) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+            ], 401);
+        }
+
+        $esDueño = (int) $user->id === (int) $venta->user_id;
+        $esAdmin = $user->hasRole('admin');
+        if (! $esDueño && ! $esAdmin) {
+            return response()->json([
+                'message' => 'No puedes cancelar esta compra.',
+            ], 403);
+        }
+
+        $estado = strtolower(trim((string) $venta->estado));
+        if ($estado !== 'pendiente') {
+            return response()->json([
+                'message' => 'Solo las compras pendientes se pueden cancelar.',
+                'estado' => $venta->estado,
+            ], 422);
+        }
+
+        $venta = DB::transaction(function () use ($venta) {
+            /** @var Venta $locked */
+            $locked = Venta::query()->whereKey($venta->id)->lockForUpdate()->firstOrFail();
+            if (strtolower(trim((string) $locked->estado)) !== 'pendiente') {
+                throw ValidationException::withMessages([
+                    'estado' => ['Solo las compras pendientes se pueden cancelar.'],
+                ]);
+            }
+
+            $lineas = DetalleVenta::query()
+                ->where('venta_id', $locked->id)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($lineas as $linea) {
+                $articulo = Articulo::query()
+                    ->whereKey((int) $linea->articulo_id)
+                    ->lockForUpdate()
+                    ->first();
+                if (! $articulo) {
+                    continue;
+                }
+                $articulo->stock = (int) $articulo->stock + (int) $linea->cantidad;
+                if ((int) $articulo->stock > 0) {
+                    $articulo->disponible = true;
+                }
+                $articulo->save();
+            }
+
+            $locked->estado = 'cancelada';
+            $locked->save();
+
+            return $locked;
+        });
+
+        $venta->load([
+            'detalle_ventas.articulo:id,nombre',
+            'user:id,nombre',
+            'forma_pago:id,nombre',
+        ]);
+
+        return response()->json([
+            'message' => 'Compra cancelada correctamente',
+            'venta' => $venta,
+        ], 200);
     }
 
     public function edit(Venta $venta)

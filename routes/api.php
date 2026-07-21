@@ -58,6 +58,8 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('inventarios', InventarioController::class);
     Route::apiResource('detalle-inventarios', DetalleInventarioController::class);
     Route::apiResource('ventas', VentaController::class);
+    // Cancelación de compra por el comprador (solo estado pendiente).
+    Route::post('ventas/{venta}/cancelar', [VentaController::class, 'cancelar']);
     
     /*
     **********************************
