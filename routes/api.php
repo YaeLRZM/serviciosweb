@@ -25,6 +25,7 @@ use App\Http\Controllers\TiendaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\NotificacionController;
 
 Route::post('login', [AuthController::class, 'login']);
 // Registro público de comprador (rol `user`). No usa /usuarios (admin-only).
@@ -44,6 +45,12 @@ Route::middleware('auth:api')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('me', [AuthController::class, 'me']);
+    Route::put('me', [AuthController::class, 'updateProfile']);
+    Route::patch('me', [AuthController::class, 'updateProfile']);
+
+    Route::get('notificaciones', [NotificacionController::class, 'index']);
+    Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
+    Route::post('notificaciones/{notificacion}/leer', [NotificacionController::class, 'marcarLeida']);
     
     /*
     *****************************************    

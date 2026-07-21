@@ -8,6 +8,8 @@ use App\Models\Articulo;
 use App\Models\DetalleVenta;
 use App\Models\FormaPago;
 use App\Models\Venta;
+use App\Services\NotificacionService;
+use App\Services\VentaAutoCompleteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,8 +22,11 @@ class VentaController extends Controller
      * - user: solo sus compras (user_id)
      * - admin: todas (opcional ?tienda=)
      */
-    public function index(Request $request)
+    public function index(Request $request, VentaAutoCompleteService $autoComplete)
     {
+        // Completar compras cuyo temporizador venció (fuente de verdad backend).
+        $autoComplete->completarVencidas();
+
         $user = $request->user('api');
         if (! $user) {
             return response()->json([
@@ -83,7 +88,7 @@ class VentaController extends Controller
      * - stock validado y decrementado (reserva) en transacción
      * - estado inicial: pendiente (cancelable por el comprador)
      */
-    public function store(StoreVentaRequest $request)
+    public function store(StoreVentaRequest $request, NotificacionService $notificaciones)
     {
         $user = $request->user('api');
         $data = $request->validated();
@@ -171,8 +176,9 @@ class VentaController extends Controller
                 'forma_pago_id' => $formaPagoId,
                 'tienda_id' => $tiendaId,
                 'total' => round($total, 2),
-                // Pago de prueba en app: queda pendiente y es cancelable.
+                // Pago de prueba: pendiente 5 min; luego auto-completa el backend.
                 'estado' => 'pendiente',
+                'auto_complete_at' => now()->addMinutes(5),
             ]);
 
             foreach ($lineas as $linea) {
@@ -205,6 +211,8 @@ class VentaController extends Controller
             'forma_pago:id,nombre',
         ]);
 
+        $notificaciones->compraPendiente($venta);
+
         return response()->json([
             'message' => 'Compra registrada correctamente',
             'venta' => $venta,
@@ -214,8 +222,11 @@ class VentaController extends Controller
     /**
      * Detalle de una venta (solo si pertenece al scope del usuario).
      */
-    public function show(Request $request, Venta $venta)
+    public function show(Request $request, Venta $venta, VentaAutoCompleteService $autoComplete)
     {
+        $autoComplete->completarVencidas();
+        $venta->refresh();
+
         $user = $request->user('api');
         if (! $user || ! $this->userCanViewVenta($user, $venta)) {
             return response()->json(['message' => 'This action is unauthorized.'], 403);

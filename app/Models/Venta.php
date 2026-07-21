@@ -15,7 +15,13 @@ class Venta extends Model
         'forma_pago_id',
         'tienda_id',
         'total',
-        'estado'
+        'estado',
+        'auto_complete_at',
+    ];
+
+    protected $casts = [
+        'total' => 'float',
+        'auto_complete_at' => 'datetime',
     ];
 
     public function user()

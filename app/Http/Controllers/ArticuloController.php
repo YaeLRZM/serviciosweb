@@ -172,6 +172,11 @@ class ArticuloController extends Controller
         $articulo = Articulo::create($data);
         $articulo->load(['categoria', 'artesano', 'tienda', 'imagenes']);
 
+        // Notificar a compradores solo si el artículo queda publicado.
+        if ($articulo->disponible) {
+            app(\App\Services\NotificacionService::class)->nuevaPublicacion($articulo);
+        }
+
         return (new ArticuloResource($articulo))
             ->response()
             ->setStatusCode(201);

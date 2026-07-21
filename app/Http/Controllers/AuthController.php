@@ -137,6 +137,50 @@ class AuthController extends Controller
     }
 
     /**
+     * Actualizar perfil del usuario autenticado.
+     * El rol NUNCA se actualiza desde aquí (solo admin en su panel).
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth('api')->user();
+        if (! $user) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+            ], 401);
+        }
+
+        $data = $request->validate([
+            'nombre' => ['sometimes', 'required', 'string', 'max:255'],
+            'apellido_paterno' => ['sometimes', 'required', 'string', 'max:255'],
+            'apellido_materno' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'email' => [
+                'sometimes',
+                'required',
+                'string',
+                'email',
+                'max:255',
+                'unique:users,email,'.$user->id,
+            ],
+            'telefono' => ['sometimes', 'nullable', 'string', 'max:40'],
+            'direccion' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'foto_url' => ['sometimes', 'nullable', 'string', 'max:1000'],
+        ]);
+
+        // Defensa en profundidad: ignorar cualquier intento de cambiar rol.
+        unset($data['rol'], $data['role'], $data['roles'], $data['password']);
+
+        $user->fill($data);
+        $user->save();
+        $user->load(['vendedor.tienda']);
+
+        return response()->json([
+            'message' => 'Perfil actualizado',
+            'user' => $user,
+        ]);
+    }
+
+    /**
      * Invalidar el token y desconectar al usuario (Logout).
      */
     public function logout()

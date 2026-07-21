@@ -26,7 +26,9 @@ class User extends Authenticatable implements JWTSubject
         'apellido_materno',
         'email',
         'password',
-        // Nota: no hay columna `name` ni `estatus` en users (schema actual pgsql).
+        'telefono',
+        'direccion',
+        'foto_url',
     ];
 
     /**
