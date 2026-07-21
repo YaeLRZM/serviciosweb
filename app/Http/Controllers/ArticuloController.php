@@ -331,6 +331,15 @@ class ArticuloController extends Controller
             );
         }
 
+        // No borrar historial de ventas: si el artículo ya se vendió, no se elimina.
+        if ($articulo->detalle_ventas()->exists()) {
+            return response()->json([
+                'message' => 'No se puede eliminar: este artículo aparece en ventas históricas. Puedes ocultarlo del catálogo público.',
+            ], 422);
+        }
+
+        // Imágenes no tienen cascade; liberarlas antes del artículo.
+        $articulo->imagenes()->delete();
         $articulo->delete();
 
         return response()->json(['message' => 'Artículo eliminado correctamente']);

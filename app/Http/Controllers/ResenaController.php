@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResenaRequest;
 use App\Http\Requests\UpdateResenaRequest;
 use App\Models\Resena;
+use App\Services\NotificacionService;
 use Illuminate\Http\Request;
 
 class ResenaController extends Controller
@@ -54,7 +55,7 @@ class ResenaController extends Controller
      * Crear reseña (JWT + permiso crearResenas).
      * user_id se toma del token; no se acepta del body.
      */
-    public function store(StoreResenaRequest $request)
+    public function store(StoreResenaRequest $request, NotificacionService $notificaciones)
     {
         $data = $request->validated();
         $data['user_id'] = auth('api')->id();
@@ -62,7 +63,9 @@ class ResenaController extends Controller
         $data['comentario'] = $data['comentario'] ?? '';
 
         $resena = Resena::create($data);
-        $resena->load(['user:id,nombre,email']);
+        $resena->load(['user:id,nombre,email', 'articulo:id,nombre,tienda_id']);
+
+        $notificaciones->nuevaResena($resena);
 
         return response()->json([
             'message' => 'Reseña creada correctamente',
