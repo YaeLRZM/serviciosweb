@@ -2,12 +2,53 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
+    /**
+     * Registro público de comprador (rol Spatie `user`).
+     * No crea vendedores ni admins.
+     */
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'apellido_paterno' => ['required', 'string', 'max:255'],
+            'apellido_materno' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = User::create([
+            'nombre' => $data['nombre'],
+            'apellido_paterno' => $data['apellido_paterno'],
+            'apellido_materno' => $data['apellido_materno'] ?? null,
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+
+        $user->assignRole('user');
+
+        $token = Auth::guard('api')->login($user);
+
+        return response()->json([
+            'success' => true,
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => config('jwt.ttl') * 60,
+            'role' => 'user',
+            'user' => [
+                'id' => $user->id,
+                'nombre' => $user->nombre,
+                'email' => $user->email,
+            ],
+        ], 201);
+    }
+
     /**
      * Generar un JWT a partir de credenciales.
      */

@@ -27,6 +27,8 @@ use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\VentaController;
 
 Route::post('login', [AuthController::class, 'login']);
+// Registro público de comprador (rol `user`). No usa /usuarios (admin-only).
+Route::post('register', [AuthController::class, 'register']);
 
 // Todos pueden acceder a estas rutas sin autenticación, por lo que se pueden usar para obtener información pública de los recursos.
 Route::apiResource('articulos', ArticuloController::class)->only(['index', 'show']);
