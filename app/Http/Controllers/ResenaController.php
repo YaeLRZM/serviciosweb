@@ -62,13 +62,28 @@ class ResenaController extends Controller
 
     public function update(UpdateResenaRequest $request, Resena $resena)
     {
+        // Ownership del autor en UpdateResenaRequest.
         $resena->update($request->validated());
+        $resena->load(['user:id,nombre,email']);
 
         return response()->json(['message' => 'Reseña actualizada correctamente', 'resena' => $resena], 200);
     }
 
-    public function destroy(Resena $resena)
+    public function destroy(Request $request, Resena $resena)
     {
+        $user = $request->user('api');
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $canDelete = $user->hasPermissionTo('eliminarResenas', 'web');
+        $isOwner = (int) $resena->user_id === (int) $user->id;
+        $isAdmin = $user->hasRole('admin');
+
+        if (! $canDelete || (! $isOwner && ! $isAdmin)) {
+            return response()->json(['message' => 'This action is unauthorized.'], 403);
+        }
+
         $resena->delete();
 
         return response()->json(['message' => 'Reseña eliminada correctamente'], 200);

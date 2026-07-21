@@ -9,6 +9,13 @@ class Direccion extends Model
 {
     /** @use HasFactory<\Database\Factories\DireccionFactory> */
     use HasFactory;
+
+    /**
+     * La migración crea `direccions` (pluralización Laravel), no `direcciones`.
+     * CRUD de direcciones sigue fuera del flujo activo de compra.
+     */
+    protected $table = 'direccions';
+
     protected $fillable = [
         'user_id',
         'estado_id',
@@ -17,7 +24,8 @@ class Direccion extends Model
         'codigo_postal',
         'pais',
         'numero_exterior',
-        'numero_interior'
+        'numero_interior',
+        'ciudad',
     ];
     public function user()
     {
