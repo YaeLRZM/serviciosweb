@@ -131,9 +131,22 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth('api')->user();
-        $user?->load(['vendedor.tienda']);
+        if (! $user) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+            ], 401);
+        }
 
-        return response()->json($user);
+        $user->load(['vendedor.tienda']);
+        $role = $user->getRoleNames()->first() ?? 'user';
+
+        // Rol explícito para la app (guards de catálogo: carrito/compra/reseñas).
+        $payload = $user->toArray();
+        $payload['role'] = $role;
+        $payload['rol'] = $role;
+
+        return response()->json($payload);
     }
 
     /**

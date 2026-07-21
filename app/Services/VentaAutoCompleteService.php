@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Log;
  */
 class VentaAutoCompleteService
 {
+    /** Minutos de confirmación automática (misma regla que VentaController@store). */
+    public const MINUTOS_AUTO_COMPLETE = 5;
+
     public function __construct(
         private readonly NotificacionService $notificaciones,
     ) {}
@@ -21,6 +24,9 @@ class VentaAutoCompleteService
      */
     public function completarVencidas(): int
     {
+        // Ventas antiguas / inconsistentes: sin auto_complete_at no hay contador ni cierre.
+        $this->asegurarAutoCompleteAtPendientes();
+
         $ids = Venta::query()
             ->where('estado', 'pendiente')
             ->whereNotNull('auto_complete_at')
@@ -61,5 +67,51 @@ class VentaAutoCompleteService
         }
 
         return $count;
+    }
+
+    /**
+     * Rellena auto_complete_at faltante en pendientes (created_at + 5 min).
+     * Así comprador y vendedor ven el mismo contador y el cierre automático funciona.
+     */
+    public function asegurarAutoCompleteAtPendientes(): int
+    {
+        $ids = Venta::query()
+            ->where('estado', 'pendiente')
+            ->whereNull('auto_complete_at')
+            ->orderBy('id')
+            ->limit(200)
+            ->pluck('id');
+
+        $fixed = 0;
+        foreach ($ids as $id) {
+            try {
+                $ok = DB::transaction(function () use ($id) {
+                    /** @var Venta|null $venta */
+                    $venta = Venta::query()->whereKey($id)->lockForUpdate()->first();
+                    if (! $venta) {
+                        return false;
+                    }
+                    if (strtolower(trim((string) $venta->estado)) !== 'pendiente') {
+                        return false;
+                    }
+                    if ($venta->auto_complete_at) {
+                        return false;
+                    }
+
+                    $base = $venta->created_at ?? now();
+                    $venta->auto_complete_at = $base->copy()->addMinutes(self::MINUTOS_AUTO_COMPLETE);
+                    $venta->save();
+
+                    return true;
+                });
+                if ($ok) {
+                    $fixed++;
+                }
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo asignar auto_complete_at a venta {$id}: ".$e->getMessage());
+            }
+        }
+
+        return $fixed;
     }
 }
