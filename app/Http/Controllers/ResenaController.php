@@ -23,6 +23,28 @@ class ResenaController extends Controller
         return $query->get();
     }
 
+    /**
+     * Opiniones del usuario autenticado (solo las suyas).
+     */
+    public function mias(Request $request)
+    {
+        $user = $request->user('api');
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $items = Resena::query()
+            ->where('user_id', (int) $user->id)
+            ->with(['articulo:id,nombre'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'data' => $items,
+            'meta' => ['count' => $items->count()],
+        ]);
+    }
+
     public function create()
     {
         //

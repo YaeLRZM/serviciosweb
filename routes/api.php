@@ -26,6 +26,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\MiCarritoController;
 
 Route::post('login', [AuthController::class, 'login']);
 // Registro público de comprador (rol `user`). No usa /usuarios (admin-only).
@@ -38,6 +39,8 @@ Route::apiResource('artesanos', ArtesanoController::class)->only(['index', 'show
 Route::apiResource('tiendas', TiendaController::class)->only(['index', 'show']);
 // Lectura pública de reseñas (escritura sigue en auth:api).
 Route::apiResource('resenas', ResenaController::class)->only(['index', 'show']);
+// Catálogo de formas de pago (solo lectura pública).
+Route::get('formas-pago', [FormaPagoController::class, 'index']);
 
 
 Route::middleware('auth:api')->group(function () {
@@ -51,6 +54,16 @@ Route::middleware('auth:api')->group(function () {
     Route::get('notificaciones', [NotificacionController::class, 'index']);
     Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
     Route::post('notificaciones/{notificacion}/leer', [NotificacionController::class, 'marcarLeida']);
+
+    // Carrito con reserva de stock (5 min).
+    Route::get('mi-carrito', [MiCarritoController::class, 'show']);
+    Route::post('mi-carrito/items', [MiCarritoController::class, 'agregar']);
+    Route::patch('mi-carrito/items/{articuloId}', [MiCarritoController::class, 'actualizar']);
+    Route::delete('mi-carrito/items/{articuloId}', [MiCarritoController::class, 'quitar']);
+    Route::delete('mi-carrito', [MiCarritoController::class, 'vaciar']);
+
+    // Opiniones del usuario autenticado.
+    Route::get('mis-resenas', [\App\Http\Controllers\ResenaController::class, 'mias']);
     
     /*
     *****************************************    

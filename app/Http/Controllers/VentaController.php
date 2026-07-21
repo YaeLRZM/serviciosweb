@@ -8,6 +8,7 @@ use App\Models\Articulo;
 use App\Models\DetalleVenta;
 use App\Models\FormaPago;
 use App\Models\Venta;
+use App\Services\CarritoReservaService;
 use App\Services\NotificacionService;
 use App\Services\VentaAutoCompleteService;
 use Illuminate\Http\Request;
@@ -88,8 +89,11 @@ class VentaController extends Controller
      * - stock validado y decrementado (reserva) en transacción
      * - estado inicial: pendiente (cancelable por el comprador)
      */
-    public function store(StoreVentaRequest $request, NotificacionService $notificaciones)
-    {
+    public function store(
+        StoreVentaRequest $request,
+        NotificacionService $notificaciones,
+        CarritoReservaService $carritoReserva,
+    ) {
         $user = $request->user('api');
         $data = $request->validated();
 
@@ -110,10 +114,13 @@ class VentaController extends Controller
             ]);
         }
 
-        $venta = DB::transaction(function () use ($user, $qtyByArticulo, $formaPagoId) {
+        $venta = DB::transaction(function () use ($user, $qtyByArticulo, $formaPagoId, $carritoReserva) {
             $articuloIds = array_keys($qtyByArticulo);
 
-            // Bloqueo pesimista para evitar oversell concurrente.
+            // Consumir reservas de carrito (stock ya descontado al reservar).
+            $carritoReserva->consumirReservasAlComprar($user, $qtyByArticulo);
+
+            // Bloqueo pesimista para armar líneas y total.
             $articulos = Articulo::query()
                 ->whereIn('id', $articuloIds)
                 ->lockForUpdate()
@@ -143,21 +150,6 @@ class VentaController extends Controller
             foreach ($qtyByArticulo as $articuloId => $cantidad) {
                 /** @var Articulo $articulo */
                 $articulo = $articulos->get($articuloId);
-
-                if (! $articulo->disponible) {
-                    throw ValidationException::withMessages([
-                        'items' => ["El artículo #{$articuloId} no está disponible."],
-                    ]);
-                }
-
-                if ((int) $articulo->stock < $cantidad) {
-                    throw ValidationException::withMessages([
-                        'items' => [
-                            "Stock insuficiente para «{$articulo->nombre}» "
-                            ."(disponible: {$articulo->stock}, solicitado: {$cantidad}).",
-                        ],
-                    ]);
-                }
 
                 $precio = (float) $articulo->precio;
                 $subtotal = round($precio * $cantidad, 2);
@@ -192,14 +184,7 @@ class VentaController extends Controller
                     'precio_unitario' => $linea['precio_unitario'],
                     'subtotal' => $linea['subtotal'],
                 ]);
-
-                $nuevoStock = (int) $articulo->stock - (int) $linea['cantidad'];
-                $articulo->stock = $nuevoStock;
-                // Si se agota, dejar de mostrarlo en catálogo público.
-                if ($nuevoStock <= 0) {
-                    $articulo->disponible = false;
-                }
-                $articulo->save();
+                // Stock ya ajustado vía carrito/reserva (consumirReservasAlComprar).
             }
 
             return $venta;

@@ -14,6 +14,13 @@ class DetalleCarrito extends Model
         'articulo_id',
         'cantidad',
         'precio_unitario',
+        'expires_at',
+    ];
+
+    protected $casts = [
+        'precio_unitario' => 'float',
+        'cantidad' => 'integer',
+        'expires_at' => 'datetime',
     ];
     public function carrito()
     {

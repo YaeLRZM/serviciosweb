@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Completa compras pendientes cada minuto (también se evalúa al listar/ver ventas).
 Schedule::command('ventas:completar-pendientes')->everyMinute();
+
+// Libera reservas de carrito vencidas y devuelve stock.
+Schedule::command('carrito:liberar-reservas')->everyMinute();
