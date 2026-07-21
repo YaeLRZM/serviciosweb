@@ -40,8 +40,10 @@ Route::apiResource('artesanos', ArtesanoController::class)->only(['index', 'show
 Route::apiResource('tiendas', TiendaController::class)->only(['index', 'show']);
 // Lectura pública de reseñas (escritura sigue en auth:api).
 Route::apiResource('resenas', ResenaController::class)->only(['index', 'show']);
-// Catálogo de formas de pago (solo lectura pública).
+// Catálogo de formas de pago: lectura pública (comprador/invitado en checkout).
+// Escritura (store/update/destroy) queda solo en el grupo auth:api más abajo.
 Route::get('formas-pago', [FormaPagoController::class, 'index']);
+Route::get('formas-pago/{formas_pago}', [FormaPagoController::class, 'show']);
 
 
 Route::middleware('auth:api')->group(function () {
@@ -118,7 +120,9 @@ Route::middleware('auth:api')->group(function () {
     *******************************
     */
 
-    Route::apiResource('formas-pago', FormaPagoController::class);
+    // Formas de pago: index/show son públicos (arriba). Aquí solo mutaciones.
+    Route::apiResource('formas-pago', FormaPagoController::class)
+        ->except(['index', 'show']);
     Route::apiResource('estados', EstadoController::class);
     Route::apiResource('vendedores', VendedorController::class);
     Route::apiResource('campanas', CampanaController::class);
