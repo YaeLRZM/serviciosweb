@@ -2,7 +2,7 @@
 
 use App\Services\Usuarios\UsuariosDataService;
 use Illuminate\Support\Facades\Schema;
-use function Livewire\Volt\{state, computed};
+use function Livewire\Volt\{state, computed, mount};
 
 $tieneEstatus = Schema::hasColumn('users', 'estatus');
 
@@ -14,6 +14,10 @@ state([
     'error' => null,
     'tieneEstatus' => $tieneEstatus,
 ]);
+
+mount(function () {
+    $this->busqueda = (string) request('busqueda', '');
+});
 
 $roles = computed(fn() => [
     'Todos' => 'Todos los roles',
