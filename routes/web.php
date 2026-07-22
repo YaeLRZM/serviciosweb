@@ -1,9 +1,30 @@
 <?php
 
 use App\Http\Controllers\ChatbotController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
+
+/*
+|--------------------------------------------------------------------------
+| Mantener sesión activa (panel web)
+|--------------------------------------------------------------------------
+| Pings periódicos desde el admin evitan 419 por CSRF/sesión vencida
+| cuando la pestaña queda abierta. Solo usuarios autenticados.
+*/
+Route::middleware(['auth', 'web'])->group(function () {
+    Route::get('/session/keep-alive', function (Request $request) {
+        // Tocar la sesión renueva last_activity en driver database.
+        $request->session()->put('_last_keep_alive', now()->toIso8601String());
+
+        return response()->json([
+            'ok' => true,
+            'csrf' => csrf_token(),
+            'server_time' => now()->toIso8601String(),
+        ]);
+    })->name('session.keep-alive');
+});
 
 /*
 |--------------------------------------------------------------------------

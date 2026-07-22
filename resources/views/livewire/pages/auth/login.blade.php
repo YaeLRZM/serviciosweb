@@ -70,6 +70,12 @@ new #[Layout('layouts.auth')] class extends Component
 
             <x-auth-session-status class="mb-4" :status="session('status')" />
 
+            @if (request()->boolean('expired') || session('status') === 'session-expired')
+                <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    Tu sesión expiró por seguridad. Vuelve a iniciar sesión para continuar.
+                </div>
+            @endif
+
             <form wire:submit="login" class="space-y-5">
 
                 <div>
