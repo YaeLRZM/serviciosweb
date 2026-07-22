@@ -22,7 +22,7 @@ class VentaFactory extends Factory
             'forma_pago_id' => \App\Models\FormaPago::query()->inRandomOrder()->value('id'),
             'tienda_id' => \App\Models\Tienda::query()->inRandomOrder()->value('id'),
             'total' => $this->faker->randomFloat(2, 10, 1000),
-            'estado' => $this->faker->randomElement(['pendiente', 'completada', 'cancelada']),
+            'estado' => $this->faker->randomElement(['pendiente', 'entregado', 'cancelada']),
         ];
     }
 }

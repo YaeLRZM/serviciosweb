@@ -21,8 +21,8 @@ use Illuminate\Support\Facades\DB;
 class DashboardStatsService
 {
     /**
-     * Clientes activos = users distintos con al menos 1 venta completada en el periodo.
-     * Ventas realizadas = conteo de ventas con estado = completada en el periodo.
+     * Clientes activos = users distintos con al menos 1 venta entregada en el periodo.
+     * Ventas realizadas = conteo de ventas con estado = entregado en el periodo.
      *
      * @return array{clientes_activos:int, clientes_crecimiento:string, ventas:int, ventas_crecimiento:string}
      */
@@ -167,7 +167,7 @@ class DashboardStatsService
     }
 
     /**
-     * Vendedores activos con más ventas completadas en su tienda.
+     * Vendedores activos con más ventas entregadas en su tienda.
      *
      * @return list<array{id:int,nombre:string,tienda:string,foto_url:string,ventas:int}>
      */
@@ -181,7 +181,7 @@ class DashboardStatsService
             ->leftJoin('tiendas as t', 't.id', '=', 'v.tienda_id')
             ->leftJoin('ventas as ve', function ($join) {
                 $join->on('ve.tienda_id', '=', 'v.tienda_id')
-                    ->where('ve.estado', '=', 'completada');
+                    ->where('ve.estado', 'entregado');
             })
             ->where('v.estatus', 'activo')
             ->select([
@@ -289,7 +289,7 @@ class DashboardStatsService
     private function clientesActivosEntre(Carbon $desde, Carbon $hasta): int
     {
         return (int) Venta::query()
-            ->where('estado', 'completada')
+            ->where('estado', 'entregado')
             ->whereBetween('created_at', [$desde, $hasta])
             ->distinct('user_id')
             ->count('user_id');
@@ -298,7 +298,7 @@ class DashboardStatsService
     private function ventasCompletadasEntre(Carbon $desde, Carbon $hasta): int
     {
         return (int) Venta::query()
-            ->where('estado', 'completada')
+            ->where('estado', 'entregado')
             ->whereBetween('created_at', [$desde, $hasta])
             ->count();
     }

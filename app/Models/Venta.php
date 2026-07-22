@@ -16,12 +16,16 @@ class Venta extends Model
         'tienda_id',
         'total',
         'estado',
+        'metodo_pago',
+        'codigo_barras',
         'auto_complete_at',
+        'next_state_at',
     ];
 
     protected $casts = [
         'total' => 'float',
         'auto_complete_at' => 'datetime',
+        'next_state_at' => 'datetime',
     ];
 
     public function user()

@@ -82,11 +82,8 @@ class VentaController extends Controller
      * Historial consolidado de adquisición del comprador autenticado.
      * GET /api/mis-articulos-adquiridos
      *
-     * Regla de negocio:
-     * - "adquirido" = EXISTS al menos una venta completada del user para ese artículo
-     * - una cancelada posterior NO quita el histórico de adquisición
-     * - solo canceladas (sin ninguna completada) => no aparece en adquiridos
-     * - "en_proceso" = pendiente y todavía sin ninguna completada del mismo artículo
+     * Regla: adquirido si existe al menos una venta entregada.
+     * Cancelada nunca cuenta. Una cancelada posterior no borra adquisición previa.
      */
     public function articulosAdquiridos(Request $request)
     {
@@ -99,14 +96,17 @@ class VentaController extends Controller
         }
 
         $userId = (int) $user->id;
+        $estadosOk = VentaAutoCompleteService::ESTADOS_ADQUIRIDOS;
 
-        // Sin clone de builder (evita side-effects): consultas independientes.
-        // EXISTS histórico: cualquier compra completada del usuario para el artículo.
         $adquiridos = DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
             ->where('ventas.user_id', $userId)
             ->where('detalle_ventas.articulo_id', '>', 0)
-            ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['completada'])
+            ->where(function ($q) use ($estadosOk) {
+                foreach ($estadosOk as $est) {
+                    $q->orWhereRaw('LOWER(TRIM(ventas.estado)) = ?', [$est]);
+                }
+            })
             ->distinct()
             ->orderBy('detalle_ventas.articulo_id')
             ->pluck('detalle_ventas.articulo_id')
@@ -115,11 +115,23 @@ class VentaController extends Controller
             ->values()
             ->all();
 
+        $enCurso = [
+            'pendiente',
+            'pendiente_activacion',
+            'listo_pagar',
+            'pago_acreditado',
+            'en_curso',
+        ];
+
         $enProceso = DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
             ->where('ventas.user_id', $userId)
             ->where('detalle_ventas.articulo_id', '>', 0)
-            ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['pendiente'])
+            ->where(function ($q) use ($enCurso) {
+                foreach ($enCurso as $est) {
+                    $q->orWhereRaw('LOWER(TRIM(ventas.estado)) = ?', [$est]);
+                }
+            })
             ->when(! empty($adquiridos), function ($q) use ($adquiridos) {
                 $q->whereNotIn('detalle_ventas.articulo_id', $adquiridos);
             })
@@ -140,18 +152,13 @@ class VentaController extends Controller
                 'count_adquiridos' => count($adquiridos),
                 'count_en_proceso' => count($enProceso),
                 'articulo_ids' => array_values($adquiridos),
-                'regla' => 'adquirido_si_existe_al_menos_una_completada',
+                'regla' => 'adquirido_si_existe_entregado',
             ],
         ]);
     }
 
     /**
-     * Estado de adquisición de UN artículo (historial, no solo la última compra).
-     * GET /api/mis-articulos-adquiridos/{articuloId}
-     *
-     * - adquirido=true  <=> existe >=1 venta completada del user con ese artículo
-     * - canceladas no anulan historial de completadas
-     * - en_proceso=true solo si hay pendiente y NO hay ninguna completada
+     * Estado de adquisición de UN artículo (historial completo del user).
      */
     public function articuloAdquisicion(Request $request, int $articuloId)
     {
@@ -172,21 +179,37 @@ class VentaController extends Controller
         }
 
         $userId = (int) $user->id;
+        $estadosOk = VentaAutoCompleteService::ESTADOS_ADQUIRIDOS;
 
         $adquirido = DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
             ->where('ventas.user_id', $userId)
             ->where('detalle_ventas.articulo_id', $articuloId)
-            ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['completada'])
+            ->where(function ($q) use ($estadosOk) {
+                foreach ($estadosOk as $est) {
+                    $q->orWhereRaw('LOWER(TRIM(ventas.estado)) = ?', [$est]);
+                }
+            })
             ->exists();
 
         $enProceso = false;
         if (! $adquirido) {
+            $enCurso = [
+                'pendiente',
+                'pendiente_activacion',
+                'listo_pagar',
+                'pago_acreditado',
+                'en_curso',
+            ];
             $enProceso = DetalleVenta::query()
                 ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
                 ->where('ventas.user_id', $userId)
                 ->where('detalle_ventas.articulo_id', $articuloId)
-                ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['pendiente'])
+                ->where(function ($q) use ($enCurso) {
+                    foreach ($enCurso as $est) {
+                        $q->orWhereRaw('LOWER(TRIM(ventas.estado)) = ?', [$est]);
+                    }
+                })
                 ->exists();
         }
 
@@ -244,7 +267,17 @@ class VentaController extends Controller
                 ]);
             }
 
-            $venta = DB::transaction(function () use ($user, $qtyByArticulo, $formaPagoId, $carritoReserva) {
+            $metodo = strtolower(trim((string) ($data['metodo_pago'] ?? '')));
+            if ($metodo !== '' && ! in_array($metodo, ['tarjeta', 'efectivo'], true)) {
+                throw ValidationException::withMessages([
+                    'metodo_pago' => ['Método de pago no válido.'],
+                ]);
+            }
+            if ($metodo === '') {
+                $metodo = null; // legacy / compat
+            }
+
+            $venta = DB::transaction(function () use ($user, $qtyByArticulo, $formaPagoId, $carritoReserva, $metodo) {
                 $articuloIds = array_keys($qtyByArticulo);
 
                 // Consumir reservas de carrito (stock ya descontado al reservar).
@@ -293,14 +326,32 @@ class VentaController extends Controller
                     ];
                 }
 
+                // Estado inicial según método de pago simulado.
+                if ($metodo === 'tarjeta') {
+                    $estado = 'pago_acreditado';
+                    $autoCompleteAt = null;
+                    $nextStateAt = now()->addMinutes(VentaAutoCompleteService::MINUTOS_PASO);
+                } elseif ($metodo === 'efectivo') {
+                    $estado = 'pendiente_activacion';
+                    $autoCompleteAt = null;
+                    $nextStateAt = null;
+                } else {
+                    // Legacy: pendiente → entregado en 5 min.
+                    $estado = 'pendiente';
+                    $autoCompleteAt = now()->addMinutes(VentaAutoCompleteService::MINUTOS_AUTO_COMPLETE);
+                    $nextStateAt = null;
+                }
+
                 $venta = Venta::create([
                     'user_id' => (int) $user->id,
                     'forma_pago_id' => $formaPagoId,
                     'tienda_id' => $tiendaId,
                     'total' => round($total, 2),
-                    // Pago de prueba: pendiente 5 min; luego auto-completa el backend.
-                    'estado' => 'pendiente',
-                    'auto_complete_at' => now()->addMinutes(5),
+                    'estado' => $estado,
+                    'metodo_pago' => $metodo,
+                    'codigo_barras' => null,
+                    'auto_complete_at' => $autoCompleteAt,
+                    'next_state_at' => $nextStateAt,
                 ]);
 
                 foreach ($lineas as $linea) {
@@ -314,7 +365,6 @@ class VentaController extends Controller
                         'precio_unitario' => $linea['precio_unitario'],
                         'subtotal' => $linea['subtotal'],
                     ]);
-                    // Stock ya ajustado vía carrito/reserva (consumirReservasAlComprar).
                 }
 
                 return $venta;
@@ -326,17 +376,22 @@ class VentaController extends Controller
                 'forma_pago:id,nombre',
             ]);
 
-            // Notificaciones no deben tumbar el alta de la compra.
             try {
                 $notificaciones->compraPendiente($venta);
             } catch (\Throwable $e) {
-                Log::warning('Notificación de compra pendiente falló: '.$e->getMessage(), [
+                Log::warning('Notificación de compra falló: '.$e->getMessage(), [
                     'venta_id' => $venta->id,
                 ]);
             }
 
+            $msg = match ($venta->metodo_pago) {
+                'efectivo' => 'Tu solicitud fue enviada al vendedor',
+                'tarjeta' => 'Tu pago fue acreditado',
+                default => 'Compra registrada correctamente',
+            };
+
             return response()->json([
-                'message' => 'Compra registrada correctamente',
+                'message' => $msg,
                 'venta' => $venta,
             ], 201);
         } catch (ValidationException $e) {
@@ -404,9 +459,9 @@ class VentaController extends Controller
         }
 
         $estado = strtolower(trim((string) $venta->estado));
-        if ($estado !== 'pendiente') {
+        if (! in_array($estado, VentaAutoCompleteService::ESTADOS_CANCELABLES, true)) {
             return response()->json([
-                'message' => 'Solo las compras pendientes se pueden cancelar.',
+                'message' => 'Esta compra ya no se puede cancelar.',
                 'estado' => $venta->estado,
             ], 422);
         }
@@ -414,9 +469,10 @@ class VentaController extends Controller
         $venta = DB::transaction(function () use ($venta) {
             /** @var Venta $locked */
             $locked = Venta::query()->whereKey($venta->id)->lockForUpdate()->firstOrFail();
-            if (strtolower(trim((string) $locked->estado)) !== 'pendiente') {
+            $estadoLocked = strtolower(trim((string) $locked->estado));
+            if (! in_array($estadoLocked, VentaAutoCompleteService::ESTADOS_CANCELABLES, true)) {
                 throw ValidationException::withMessages([
-                    'estado' => ['Solo las compras pendientes se pueden cancelar.'],
+                    'estado' => ['Esta compra ya no se puede cancelar.'],
                 ]);
             }
 
@@ -441,6 +497,8 @@ class VentaController extends Controller
             }
 
             $locked->estado = 'cancelada';
+            $locked->next_state_at = null;
+            $locked->auto_complete_at = null;
             $locked->save();
 
             return $locked;
@@ -454,6 +512,65 @@ class VentaController extends Controller
 
         return response()->json([
             'message' => 'Compra cancelada correctamente',
+            'venta' => $venta,
+        ], 200);
+    }
+
+    /**
+     * Vendedor activa pago en efectivo: genera código de barras y deja listo para pagar.
+     * POST /api/ventas/{venta}/activar-efectivo
+     */
+    public function activarEfectivo(
+        Request $request,
+        Venta $venta,
+        VentaAutoCompleteService $autoComplete,
+        NotificacionService $notificaciones,
+    ) {
+        $user = $request->user('api');
+        if (! $user) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+            ], 401);
+        }
+
+        if (! $user->hasRole('admin')) {
+            if (! $user->hasRole('vendedor')) {
+                return response()->json(['message' => 'Solo el vendedor puede activar el pago.'], 403);
+            }
+            $user->loadMissing('vendedor');
+            $tiendaId = $user->vendedor?->tienda_id;
+            if (! $tiendaId || (int) $tiendaId !== (int) $venta->tienda_id) {
+                return response()->json(['message' => 'No puedes activar esta compra.'], 403);
+            }
+        }
+
+        try {
+            $venta = $autoComplete->activarEfectivo($venta);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            Log::error('Error al activar efectivo: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'No se pudo activar el pago en efectivo. Intenta de nuevo.',
+            ], 500);
+        }
+
+        $venta->load([
+            'detalle_ventas.articulo:id,nombre',
+            'user:id,nombre',
+            'forma_pago:id,nombre',
+        ]);
+
+        try {
+            $notificaciones->efectivoActivadoComprador($venta);
+        } catch (\Throwable $e) {
+            Log::warning('Notificación efectivo activado falló: '.$e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'El vendedor activó tu pago en efectivo',
             'venta' => $venta,
         ], 200);
     }

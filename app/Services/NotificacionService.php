@@ -14,6 +14,43 @@ class NotificacionService
 {
     public function compraPendiente(Venta $venta): void
     {
+        $metodo = strtolower(trim((string) ($venta->metodo_pago ?? '')));
+
+        if ($metodo === 'efectivo') {
+            Notificacion::create([
+                'user_id' => (int) $venta->user_id,
+                'tipo' => 'compra_efectivo_solicitud',
+                'titulo' => 'Solicitud enviada',
+                'mensaje' => "Tu solicitud de pago en efectivo #{$venta->id} fue enviada al vendedor.",
+                'data' => [
+                    'venta_id' => (int) $venta->id,
+                    'estado' => (string) $venta->estado,
+                    'metodo_pago' => 'efectivo',
+                ],
+            ]);
+            $this->solicitudEfectivoVendedor($venta);
+
+            return;
+        }
+
+        if ($metodo === 'tarjeta') {
+            Notificacion::create([
+                'user_id' => (int) $venta->user_id,
+                'tipo' => 'pago_acreditado',
+                'titulo' => 'Pago acreditado',
+                'mensaje' => "Tu pago de la compra #{$venta->id} fue acreditado.",
+                'data' => [
+                    'venta_id' => (int) $venta->id,
+                    'estado' => (string) $venta->estado,
+                    'metodo_pago' => 'tarjeta',
+                ],
+            ]);
+            $this->notificarVendedorVenta($venta, pendiente: false);
+
+            return;
+        }
+
+        // Legacy sin metodo_pago.
         Notificacion::create([
             'user_id' => (int) $venta->user_id,
             'tipo' => 'compra_pendiente',
@@ -25,24 +62,102 @@ class NotificacionService
             ],
         ]);
 
-        // Aviso al vendedor dueño de la tienda (misma venta, otro user_id).
         $this->notificarVendedorVenta($venta, pendiente: true);
     }
 
+    /**
+     * @deprecated Preferir pedidoEntregado. Se mantiene por si algún caller legado lo invoca.
+     */
     public function compraCompletada(Venta $venta): void
+    {
+        $this->pedidoEntregado($venta);
+    }
+
+    public function pagoAcreditado(Venta $venta): void
     {
         Notificacion::create([
             'user_id' => (int) $venta->user_id,
-            'tipo' => 'compra_completada',
-            'titulo' => 'Compra confirmada',
-            'mensaje' => "Tu compra #{$venta->id} se ha confirmado.",
+            'tipo' => 'pago_acreditado',
+            'titulo' => 'Pago acreditado',
+            'mensaje' => "Tu pago de la compra #{$venta->id} fue acreditado.",
             'data' => [
                 'venta_id' => (int) $venta->id,
-                'estado' => 'completada',
+                'estado' => (string) $venta->estado,
             ],
         ]);
+    }
 
+    public function pedidoEnCurso(Venta $venta): void
+    {
+        Notificacion::create([
+            'user_id' => (int) $venta->user_id,
+            'tipo' => 'pedido_en_curso',
+            'titulo' => 'Pedido en curso',
+            'mensaje' => "Tu pedido #{$venta->id} está en curso.",
+            'data' => [
+                'venta_id' => (int) $venta->id,
+                'estado' => (string) $venta->estado,
+            ],
+        ]);
+    }
+
+    public function pedidoEntregado(Venta $venta): void
+    {
+        Notificacion::create([
+            'user_id' => (int) $venta->user_id,
+            'tipo' => 'pedido_entregado',
+            'titulo' => 'Pedido entregado',
+            'mensaje' => "Tu pedido #{$venta->id} fue entregado.",
+            'data' => [
+                'venta_id' => (int) $venta->id,
+                'estado' => (string) $venta->estado,
+            ],
+        ]);
         $this->notificarVendedorVenta($venta, pendiente: false);
+    }
+
+    public function efectivoActivadoComprador(Venta $venta): void
+    {
+        Notificacion::create([
+            'user_id' => (int) $venta->user_id,
+            'tipo' => 'efectivo_activado',
+            'titulo' => 'Ya puedes pagar',
+            'mensaje' => "El vendedor activó tu pago en efectivo de la compra #{$venta->id}. Ya puedes realizar tu pago.",
+            'data' => [
+                'venta_id' => (int) $venta->id,
+                'estado' => (string) $venta->estado,
+                'codigo_barras' => $venta->codigo_barras,
+            ],
+        ]);
+    }
+
+    public function solicitudEfectivoVendedor(Venta $venta): void
+    {
+        try {
+            $vendedorUserId = Vendedor::query()
+                ->where('tienda_id', (int) $venta->tienda_id)
+                ->value('user_id');
+            if (! $vendedorUserId) {
+                return;
+            }
+            if ((int) $vendedorUserId === (int) $venta->user_id) {
+                return;
+            }
+
+            Notificacion::create([
+                'user_id' => (int) $vendedorUserId,
+                'tipo' => 'solicitud_efectivo',
+                'titulo' => 'Solicitud de pago en efectivo',
+                'mensaje' => "Nueva solicitud de pago en efectivo #{$venta->id}. Actívala para generar el código.",
+                'data' => [
+                    'venta_id' => (int) $venta->id,
+                    'tienda_id' => (int) $venta->tienda_id,
+                    'estado' => (string) $venta->estado,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo notificar solicitud efectivo: '.$e->getMessage());
+        }
     }
 
     /**
@@ -85,19 +200,19 @@ class NotificacionService
                     'data' => [
                         'venta_id' => (int) $venta->id,
                         'tienda_id' => (int) $venta->tienda_id,
-                        'estado' => 'pendiente',
+                        'estado' => (string) $venta->estado,
                     ],
                 ]);
             } else {
                 Notificacion::create([
                     'user_id' => (int) $vendedorUserId,
-                    'tipo' => 'venta_completada',
-                    'titulo' => 'Venta completada',
-                    'mensaje' => "La venta #{$venta->id} de {$articuloTxt} se ha completado.",
+                    'tipo' => 'venta_entregada',
+                    'titulo' => 'Venta entregada',
+                    'mensaje' => "La venta #{$venta->id} de {$articuloTxt} fue entregada.",
                     'data' => [
                         'venta_id' => (int) $venta->id,
                         'tienda_id' => (int) $venta->tienda_id,
-                        'estado' => 'completada',
+                        'estado' => 'entregado',
                     ],
                 ]);
             }

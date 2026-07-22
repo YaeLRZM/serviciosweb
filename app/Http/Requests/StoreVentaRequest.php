@@ -40,6 +40,8 @@ class StoreVentaRequest extends FormRequest
             'items.*.cantidad' => ['required', 'integer', 'min:1', 'max:999'],
             // Opcional: si no viene, el controller elige el primer forma_pago.
             'forma_pago_id' => ['sometimes', 'nullable', 'integer', 'exists:forma_pagos,id'],
+            // Simulación: tarjeta | efectivo (legacy sin campo sigue funcionando).
+            'metodo_pago' => ['sometimes', 'nullable', 'string', 'in:tarjeta,efectivo'],
         ];
     }
 
