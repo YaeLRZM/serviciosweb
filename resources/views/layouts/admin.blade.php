@@ -53,20 +53,22 @@
                             <flux:dropdown position="bottom" align="end">
 
                                 <button
-                                    class="flex text-sm bg-white rounded-full focus:ring-2 focus:ring-[#D81B60] transition flex-shrink-0 p-0.5 border-2 border-pink-100/60">
-
-                                    <img
-                                        class="h-10 w-10 rounded-full object-cover"
-                                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
-                                        alt="Avatar del Administrador">
-
+                                    class="flex text-sm bg-white rounded-full focus:ring-2 focus:ring-[#D81B60] transition flex-shrink-0 p-0.5 border-2 border-pink-100/60"
+                                    aria-label="Menú de perfil">
+                                    {{-- Ícono de administrador (sin imagen genérica externa) --}}
+                                    <span class="h-10 w-10 rounded-full bg-[#F3E5E8] text-[#D81B60] flex items-center justify-center">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                                                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                                        </svg>
+                                    </span>
                                 </button>
 
                                 <flux:menu class="bg-[#F8F5F2] text-zinc-900 min-w-64">
 
                                     <div class="px-4 py-3">
                                         <p class="font-semibold text-zinc-900">
-                                            {{ auth()->user()->name ?? 'Administrador' }}
+                                            {{ auth()->user()->nombre_completo ?? (auth()->user()->nombre ?? 'Administrador') }}
                                         </p>
 
                                         <p class="text-sm text-zinc-500">

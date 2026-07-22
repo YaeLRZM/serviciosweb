@@ -39,7 +39,7 @@ $logout = function (Logout $logout) {
             <flux:dropdown position="top" align="start" class="w-full">
                 <button class="flex items-center gap-3 w-full text-left px-2 py-1.5 rounded-lg hover:bg-[#F8F5F2]/10 text-[#F8F5F2] transition-colors">
                     <x-icon.user variant="mini" />
-                    <span class="truncate font-medium flex-1">{{ auth()->user()->name ?? 'Administrador' }}</span>
+                    <span class="truncate font-medium flex-1">{{ auth()->user()->nombre_completo ?? (auth()->user()->nombre ?? 'Administrador') }}</span>
                 </button>
                 <flux:menu class="bg-[#F8F5F2] text-zinc-900 border border-zinc-200 p-1">
                     <flux:menu.item :href="route('admin.profile')" icon="cog" wire:navigate>
@@ -71,7 +71,7 @@ $logout = function (Logout $logout) {
             </button>
             <flux:menu class="bg-[#F8F5F2] text-zinc-900">
                 <div class="px-3 py-2 border-b border-zinc-200/50">
-                    <p class="font-medium text-sm truncate">{{ auth()->user()->name ?? 'Admin' }}</p>
+                    <p class="font-medium text-sm truncate">{{ auth()->user()->nombre_completo ?? (auth()->user()->nombre ?? 'Admin') }}</p>
                     <p class="text-xs text-zinc-500 truncate">{{ auth()->user()->email ?? '' }}</p>
                 </div>
                 <flux:menu.item :href="route('admin.profile')" icon="cog" wire:navigate>
