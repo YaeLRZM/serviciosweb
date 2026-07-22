@@ -13,6 +13,7 @@ use App\Services\NotificacionService;
 use App\Services\VentaAutoCompleteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class VentaController extends Controller
@@ -38,6 +39,8 @@ class VentaController extends Controller
 
         $query = Venta::query()
             ->withCount('detalle_ventas')
+            // Líneas reales para Mis compras / Mis ventas (navegación a prendas).
+            ->with(['detalle_ventas.articulo:id,nombre'])
             ->orderByDesc('id');
 
         if ($user->hasRole('admin')) {
@@ -75,6 +78,125 @@ class VentaController extends Controller
         ]);
     }
 
+    /**
+     * Historial consolidado de adquisición del comprador autenticado.
+     * GET /api/mis-articulos-adquiridos
+     *
+     * Regla de negocio:
+     * - "adquirido" = EXISTS al menos una venta completada del user para ese artículo
+     * - una cancelada posterior NO quita el histórico de adquisición
+     * - solo canceladas (sin ninguna completada) => no aparece en adquiridos
+     * - "en_proceso" = pendiente y todavía sin ninguna completada del mismo artículo
+     */
+    public function articulosAdquiridos(Request $request)
+    {
+        $user = $request->user('api');
+        if (! $user) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+            ], 401);
+        }
+
+        $userId = (int) $user->id;
+
+        // Sin clone de builder (evita side-effects): consultas independientes.
+        // EXISTS histórico: cualquier compra completada del usuario para el artículo.
+        $adquiridos = DetalleVenta::query()
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->where('ventas.user_id', $userId)
+            ->where('detalle_ventas.articulo_id', '>', 0)
+            ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['completada'])
+            ->distinct()
+            ->orderBy('detalle_ventas.articulo_id')
+            ->pluck('detalle_ventas.articulo_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $enProceso = DetalleVenta::query()
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->where('ventas.user_id', $userId)
+            ->where('detalle_ventas.articulo_id', '>', 0)
+            ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['pendiente'])
+            ->when(! empty($adquiridos), function ($q) use ($adquiridos) {
+                $q->whereNotIn('detalle_ventas.articulo_id', $adquiridos);
+            })
+            ->distinct()
+            ->orderBy('detalle_ventas.articulo_id')
+            ->pluck('detalle_ventas.articulo_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        return response()->json([
+            'data' => [
+                'adquiridos' => array_values($adquiridos),
+                'en_proceso' => array_values($enProceso),
+            ],
+            'meta' => [
+                'count_adquiridos' => count($adquiridos),
+                'count_en_proceso' => count($enProceso),
+                'articulo_ids' => array_values($adquiridos),
+                'regla' => 'adquirido_si_existe_al_menos_una_completada',
+            ],
+        ]);
+    }
+
+    /**
+     * Estado de adquisición de UN artículo (historial, no solo la última compra).
+     * GET /api/mis-articulos-adquiridos/{articuloId}
+     *
+     * - adquirido=true  <=> existe >=1 venta completada del user con ese artículo
+     * - canceladas no anulan historial de completadas
+     * - en_proceso=true solo si hay pendiente y NO hay ninguna completada
+     */
+    public function articuloAdquisicion(Request $request, int $articuloId)
+    {
+        $user = $request->user('api');
+        if (! $user) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+            ], 401);
+        }
+
+        if ($articuloId <= 0) {
+            return response()->json([
+                'adquirido' => false,
+                'en_proceso' => false,
+                'articulo_id' => $articuloId,
+            ]);
+        }
+
+        $userId = (int) $user->id;
+
+        $adquirido = DetalleVenta::query()
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->where('ventas.user_id', $userId)
+            ->where('detalle_ventas.articulo_id', $articuloId)
+            ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['completada'])
+            ->exists();
+
+        $enProceso = false;
+        if (! $adquirido) {
+            $enProceso = DetalleVenta::query()
+                ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+                ->where('ventas.user_id', $userId)
+                ->where('detalle_ventas.articulo_id', $articuloId)
+                ->whereRaw('LOWER(TRIM(ventas.estado)) = ?', ['pendiente'])
+                ->exists();
+        }
+
+        return response()->json([
+            'articulo_id' => $articuloId,
+            'adquirido' => (bool) $adquirido,
+            'en_proceso' => (bool) $enProceso,
+        ]);
+    }
+
     public function create()
     {
         //
@@ -94,114 +216,143 @@ class VentaController extends Controller
         NotificacionService $notificaciones,
         CarritoReservaService $carritoReserva,
     ) {
-        $user = $request->user('api');
-        $data = $request->validated();
+        try {
+            $user = $request->user('api');
+            if (! $user) {
+                return response()->json([
+                    'error' => true,
+                    'mensaje' => 'Acceso denegado. Por favor, inicie sesión para continuar.',
+                ], 401);
+            }
 
-        // Agrupar cantidades por articulo_id (por si el cliente manda duplicados).
-        $qtyByArticulo = [];
-        foreach ($data['items'] as $item) {
-            $id = (int) $item['articulo_id'];
-            $qtyByArticulo[$id] = ($qtyByArticulo[$id] ?? 0) + (int) $item['cantidad'];
-        }
+            $data = $request->validated();
 
-        $formaPagoId = isset($data['forma_pago_id'])
-            ? (int) $data['forma_pago_id']
-            : (int) (FormaPago::query()->orderBy('id')->value('id') ?? 0);
+            // Agrupar cantidades por articulo_id (por si el cliente manda duplicados).
+            $qtyByArticulo = [];
+            foreach ($data['items'] as $item) {
+                $id = (int) $item['articulo_id'];
+                $qtyByArticulo[$id] = ($qtyByArticulo[$id] ?? 0) + (int) $item['cantidad'];
+            }
 
-        if ($formaPagoId <= 0) {
-            throw ValidationException::withMessages([
-                'forma_pago_id' => ['No hay forma de pago configurada en el sistema.'],
-            ]);
-        }
+            $formaPagoId = isset($data['forma_pago_id'])
+                ? (int) $data['forma_pago_id']
+                : (int) (FormaPago::query()->orderBy('id')->value('id') ?? 0);
 
-        $venta = DB::transaction(function () use ($user, $qtyByArticulo, $formaPagoId, $carritoReserva) {
-            $articuloIds = array_keys($qtyByArticulo);
-
-            // Consumir reservas de carrito (stock ya descontado al reservar).
-            $carritoReserva->consumirReservasAlComprar($user, $qtyByArticulo);
-
-            // Bloqueo pesimista para armar líneas y total.
-            $articulos = Articulo::query()
-                ->whereIn('id', $articuloIds)
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-
-            if ($articulos->count() !== count($articuloIds)) {
+            if ($formaPagoId <= 0) {
                 throw ValidationException::withMessages([
-                    'items' => ['Uno o más artículos no existen.'],
+                    'forma_pago_id' => ['No hay forma de pago configurada en el sistema.'],
                 ]);
             }
 
-            $tiendaIds = $articulos->pluck('tienda_id')->unique()->values();
-            if ($tiendaIds->count() !== 1) {
-                throw ValidationException::withMessages([
-                    'items' => [
-                        'En esta versión solo puedes comprar artículos de una misma tienda. '
-                        .'Quita del carrito los productos de otras tiendas e intenta de nuevo.',
-                    ],
+            $venta = DB::transaction(function () use ($user, $qtyByArticulo, $formaPagoId, $carritoReserva) {
+                $articuloIds = array_keys($qtyByArticulo);
+
+                // Consumir reservas de carrito (stock ya descontado al reservar).
+                $carritoReserva->consumirReservasAlComprar($user, $qtyByArticulo);
+
+                // Bloqueo pesimista para armar líneas y total.
+                $articulos = Articulo::query()
+                    ->whereIn('id', $articuloIds)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                if ($articulos->count() !== count($articuloIds)) {
+                    throw ValidationException::withMessages([
+                        'items' => ['Uno o más artículos no existen.'],
+                    ]);
+                }
+
+                $tiendaIds = $articulos->pluck('tienda_id')->unique()->values();
+                if ($tiendaIds->count() !== 1) {
+                    throw ValidationException::withMessages([
+                        'items' => [
+                            'En esta versión solo puedes comprar artículos de una misma tienda. '
+                            .'Quita del carrito los productos de otras tiendas e intenta de nuevo.',
+                        ],
+                    ]);
+                }
+                $tiendaId = (int) $tiendaIds->first();
+
+                $lineas = [];
+                $total = 0.0;
+
+                foreach ($qtyByArticulo as $articuloId => $cantidad) {
+                    /** @var Articulo $articulo */
+                    $articulo = $articulos->get($articuloId);
+
+                    $precio = (float) $articulo->precio;
+                    $subtotal = round($precio * $cantidad, 2);
+                    $total += $subtotal;
+
+                    $lineas[] = [
+                        'articulo' => $articulo,
+                        'cantidad' => $cantidad,
+                        'precio_unitario' => $precio,
+                        'subtotal' => $subtotal,
+                    ];
+                }
+
+                $venta = Venta::create([
+                    'user_id' => (int) $user->id,
+                    'forma_pago_id' => $formaPagoId,
+                    'tienda_id' => $tiendaId,
+                    'total' => round($total, 2),
+                    // Pago de prueba: pendiente 5 min; luego auto-completa el backend.
+                    'estado' => 'pendiente',
+                    'auto_complete_at' => now()->addMinutes(5),
                 ]);
-            }
-            $tiendaId = (int) $tiendaIds->first();
 
-            $lineas = [];
-            $total = 0.0;
+                foreach ($lineas as $linea) {
+                    /** @var Articulo $articulo */
+                    $articulo = $linea['articulo'];
 
-            foreach ($qtyByArticulo as $articuloId => $cantidad) {
-                /** @var Articulo $articulo */
-                $articulo = $articulos->get($articuloId);
+                    DetalleVenta::create([
+                        'venta_id' => $venta->id,
+                        'articulo_id' => $articulo->id,
+                        'cantidad' => $linea['cantidad'],
+                        'precio_unitario' => $linea['precio_unitario'],
+                        'subtotal' => $linea['subtotal'],
+                    ]);
+                    // Stock ya ajustado vía carrito/reserva (consumirReservasAlComprar).
+                }
 
-                $precio = (float) $articulo->precio;
-                $subtotal = round($precio * $cantidad, 2);
-                $total += $subtotal;
+                return $venta;
+            });
 
-                $lineas[] = [
-                    'articulo' => $articulo,
-                    'cantidad' => $cantidad,
-                    'precio_unitario' => $precio,
-                    'subtotal' => $subtotal,
-                ];
-            }
-
-            $venta = Venta::create([
-                'user_id' => (int) $user->id,
-                'forma_pago_id' => $formaPagoId,
-                'tienda_id' => $tiendaId,
-                'total' => round($total, 2),
-                // Pago de prueba: pendiente 5 min; luego auto-completa el backend.
-                'estado' => 'pendiente',
-                'auto_complete_at' => now()->addMinutes(5),
+            $venta->load([
+                'detalle_ventas.articulo:id,nombre',
+                'user:id,nombre',
+                'forma_pago:id,nombre',
             ]);
 
-            foreach ($lineas as $linea) {
-                /** @var Articulo $articulo */
-                $articulo = $linea['articulo'];
-
-                DetalleVenta::create([
+            // Notificaciones no deben tumbar el alta de la compra.
+            try {
+                $notificaciones->compraPendiente($venta);
+            } catch (\Throwable $e) {
+                Log::warning('Notificación de compra pendiente falló: '.$e->getMessage(), [
                     'venta_id' => $venta->id,
-                    'articulo_id' => $articulo->id,
-                    'cantidad' => $linea['cantidad'],
-                    'precio_unitario' => $linea['precio_unitario'],
-                    'subtotal' => $linea['subtotal'],
                 ]);
-                // Stock ya ajustado vía carrito/reserva (consumirReservasAlComprar).
             }
 
-            return $venta;
-        });
+            return response()->json([
+                'message' => 'Compra registrada correctamente',
+                'venta' => $venta,
+            ], 201);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Error al registrar compra: '.$e->getMessage(), [
+                'user_id' => $request->user('api')?->id,
+                'exception' => $e::class,
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        $venta->load([
-            'detalle_ventas.articulo:id,nombre',
-            'user:id,nombre',
-            'forma_pago:id,nombre',
-        ]);
-
-        $notificaciones->compraPendiente($venta);
-
-        return response()->json([
-            'message' => 'Compra registrada correctamente',
-            'venta' => $venta,
-        ], 201);
+            return response()->json([
+                'message' => 'No se pudo registrar la compra. Intenta de nuevo.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /**

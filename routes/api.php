@@ -92,6 +92,10 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('ventas', VentaController::class);
     // Cancelación de compra por el comprador (solo estado pendiente).
     Route::post('ventas/{venta}/cancelar', [VentaController::class, 'cancelar']);
+    // Historial de adquisición del comprador (completada = adquirida; cancelada no anula).
+    Route::get('mis-articulos-adquiridos', [VentaController::class, 'articulosAdquiridos']);
+    Route::get('mis-articulos-adquiridos/{articuloId}', [VentaController::class, 'articuloAdquisicion'])
+        ->whereNumber('articuloId');
     
     /*
     **********************************
