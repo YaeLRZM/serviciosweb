@@ -91,7 +91,8 @@ class ArticulosDataService
      */
     protected function mapear(Articulo $a): array
     {
-        $stock = (int) ($a->inventario?->stock_actual ?? 0);
+        $stock = (int) ($a->inventario?->stock_actual ?? $a->stock ?? 0);
+        $stockMinimo = (int) ($a->inventario?->stock_minimo ?? 0);
 
         return [
             'id' => (int) $a->id,
@@ -102,6 +103,11 @@ class ArticulosDataService
             'tela' => (string) ($a->tela ?? ''),
             'region' => (string) ($a->region ?? ''),
             'stock' => $stock,
+            'disponible' => (bool) ($a->disponible ?? true),
+            'inventario' => [
+                'stock_actual' => $stock,
+                'stock_minimo' => $stockMinimo,
+            ],
             'categoria' => [
                 'id' => $a->categoria?->id,
                 'nombre' => $a->categoria?->nombre ?? '—',

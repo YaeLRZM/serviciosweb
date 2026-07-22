@@ -220,68 +220,214 @@ class DashboardStatsService
     }
 
     /**
-     * Alertas operativas reales (no hay tabla de reportes/moderación).
+     * Alertas operativas reales y accionables (solo si hay algo que revisar).
+     * Cada alerta incluye `url` hacia la vista filtrada correspondiente.
      *
-     * @return list<array{tipo:string,entidad:string,motivo:string,urgente:bool,count:int}>
+     * @return list<array{
+     *   id:string,
+     *   tipo:string,
+     *   motivo:string,
+     *   urgente:bool,
+     *   prioridad:int,
+     *   count:int,
+     *   etiqueta:string,
+     *   url:string
+     * }>
      */
     public function alertasOperativas(): array
     {
-        $vendedoresInactivos = Vendedor::query()->where('estatus', 'inactivo')->count();
-        $articulosAgotados = Articulo::query()
+        $alertas = [];
+        $desde14 = now()->subDays(14)->startOfDay();
+        $desde30 = now()->subDays(30)->startOfDay();
+        $fechaDesde14 = $desde14->toDateString();
+        $fechaDesde30 = $desde30->toDateString();
+
+        // 1) Compras canceladas recientes
+        $canceladas14 = (int) Venta::query()
+            ->where('estado', 'cancelada')
+            ->where('created_at', '>=', $desde14)
+            ->count();
+        if ($canceladas14 > 0) {
+            $alertas[] = [
+                'id' => 'canceladas_recientes',
+                'tipo' => 'Compras canceladas recientemente',
+                'motivo' => $canceladas14 === 1
+                    ? 'Se detectó 1 compra cancelada en los últimos 14 días. Conviene revisar el motivo y el historial.'
+                    : "Se detectaron {$canceladas14} compras canceladas en los últimos 14 días. Revisa el listado para aclarar inconvenientes.",
+                'urgente' => $canceladas14 >= 5,
+                'prioridad' => 100 + min($canceladas14, 50),
+                'count' => $canceladas14,
+                'etiqueta' => 'Compras',
+                'url' => route('admin.ventas.index', [
+                    'estado' => 'cancelada',
+                    'fecha_desde' => $fechaDesde14,
+                ]),
+            ];
+        }
+
+        // 2) Proporción alta de cancelaciones (30 días)
+        $total30 = (int) Venta::query()->where('created_at', '>=', $desde30)->count();
+        $canceladas30 = (int) Venta::query()
+            ->where('estado', 'cancelada')
+            ->where('created_at', '>=', $desde30)
+            ->count();
+        if ($total30 >= 5 && $canceladas30 >= 3) {
+            $ratio = (int) round(($canceladas30 / $total30) * 100);
+            if ($ratio >= 20) {
+                $alertas[] = [
+                    'id' => 'tasa_cancelacion',
+                    'tipo' => 'Cancelaciones en aumento',
+                    'motivo' => "En los últimos 30 días, el {$ratio}% de las compras quedaron canceladas ({$canceladas30} de {$total30}). Revisa el patrón.",
+                    'urgente' => $ratio >= 35,
+                    'prioridad' => 95 + min($ratio, 40),
+                    'count' => $canceladas30,
+                    'etiqueta' => 'Compras',
+                    'url' => route('admin.ventas.index', [
+                        'estado' => 'cancelada',
+                        'fecha_desde' => $fechaDesde30,
+                    ]),
+                ];
+            }
+        }
+
+        // 3) Reseñas con baja calificación recientes
+        $resenasBajas = (int) \App\Models\Resena::query()
+            ->whereIn('calificacion', [1, 2])
+            ->where('created_at', '>=', $desde14)
+            ->count();
+        if ($resenasBajas > 0) {
+            $alertas[] = [
+                'id' => 'resenas_bajas',
+                'tipo' => 'Reseñas recientes con baja calificación',
+                'motivo' => $resenasBajas === 1
+                    ? 'Hay 1 reseña reciente con 1 o 2 estrellas. Revisa el comentario y la prenda relacionada.'
+                    : "Hay {$resenasBajas} reseñas recientes con 1 o 2 estrellas. Conviene revisar inconformidades de clientes.",
+                'urgente' => $resenasBajas >= 5,
+                'prioridad' => 90 + min($resenasBajas, 30),
+                'count' => $resenasBajas,
+                'etiqueta' => 'Reseñas',
+                'url' => route('admin.resenas.index', [
+                    'calificacion' => 'baja',
+                    'fecha_desde' => $fechaDesde14,
+                ]),
+            ];
+        }
+
+        // 4) Pedidos que aún no terminan (flujo de pago / entrega)
+        $enProceso = (int) Venta::query()
+            ->whereIn('estado', [
+                'pendiente',
+                'pendiente_activacion',
+                'listo_pagar',
+                'pago_acreditado',
+                'en_curso',
+            ])
+            ->count();
+        if ($enProceso > 0) {
+            $alertas[] = [
+                'id' => 'pedidos_en_proceso',
+                'tipo' => 'Pedidos que requieren seguimiento',
+                'motivo' => $enProceso === 1
+                    ? 'Hay 1 pedido que aún no está entregado ni cancelado. Revisa su estado actual.'
+                    : "Hay {$enProceso} pedidos que aún no finalizan. Revisa si alguno lleva demasiado tiempo en proceso.",
+                'urgente' => $enProceso >= 8,
+                'prioridad' => 80 + min($enProceso, 25),
+                'count' => $enProceso,
+                'etiqueta' => 'Compras',
+                // Sin estado único: abrir ventas ordenadas por más antiguas + 30 días
+                'url' => route('admin.ventas.index', [
+                    'fecha_desde' => $fechaDesde30,
+                    'orden' => 'fecha_asc',
+                    'en_proceso' => '1',
+                ]),
+            ];
+        }
+
+        // 5) Publicaciones sin existencias
+        $agotados = (int) Articulo::query()
             ->where(function ($q) {
-                $q->whereDoesntHave('inventario')
+                $q->where('stock', '<=', 0)
                     ->orWhereHas('inventario', fn ($i) => $i->where('stock_actual', '<=', 0));
             })
             ->count();
-        $ventasPendientes = Venta::query()->where('estado', 'pendiente')->count();
-        $stockBajo = Inventario::query()
+        if ($agotados > 0) {
+            $alertas[] = [
+                'id' => 'productos_agotados',
+                'tipo' => 'Prendas sin existencias',
+                'motivo' => $agotados === 1
+                    ? 'Hay 1 prenda marcada sin existencias. Revisa publicaciones y stock.'
+                    : "Hay {$agotados} prendas sin existencias. Revisa el catálogo de publicaciones.",
+                'urgente' => $agotados >= 15,
+                'prioridad' => 55 + min($agotados, 20),
+                'count' => $agotados,
+                'etiqueta' => 'Publicaciones',
+                'url' => route('admin.publicacion.index', ['filtro_stock' => 'agotado']),
+            ];
+        }
+
+        // 6) Stock bajo mínimo (solo si hay filas reales)
+        $stockBajo = (int) Inventario::query()
             ->whereColumn('stock_actual', '<=', 'stock_minimo')
             ->where('stock_actual', '>', 0)
             ->count();
-
-        $alertas = [];
-
-        if ($vendedoresInactivos > 0) {
-            $alertas[] = [
-                'tipo' => 'Vendedores inactivos',
-                'entidad' => 'vendedor',
-                'motivo' => "Hay {$vendedoresInactivos} vendedor(es) con estatus inactivo pendientes de revisión.",
-                'urgente' => $vendedoresInactivos >= 3,
-                'count' => $vendedoresInactivos,
-            ];
-        }
-
-        if ($articulosAgotados > 0) {
-            $alertas[] = [
-                'tipo' => 'Artículos agotados',
-                'entidad' => 'publicacion',
-                'motivo' => "Hay {$articulosAgotados} artículo(s) sin existencias (stock 0 o sin inventario).",
-                'urgente' => $articulosAgotados >= 10,
-                'count' => $articulosAgotados,
-            ];
-        }
-
         if ($stockBajo > 0) {
             $alertas[] = [
-                'tipo' => 'Stock bajo mínimo',
-                'entidad' => 'publicacion',
-                'motivo' => "Hay {$stockBajo} inventario(s) con stock_actual ≤ stock_minimo.",
+                'id' => 'stock_bajo',
+                'tipo' => 'Existencias por reponer',
+                'motivo' => $stockBajo === 1
+                    ? 'Hay 1 prenda con existencias por debajo del mínimo definido.'
+                    : "Hay {$stockBajo} prendas con existencias por debajo del mínimo definido.",
                 'urgente' => false,
+                'prioridad' => 40 + min($stockBajo, 15),
                 'count' => $stockBajo,
+                'etiqueta' => 'Publicaciones',
+                'url' => route('admin.publicacion.index', ['filtro_stock' => 'bajo']),
             ];
         }
 
-        if ($ventasPendientes > 0) {
+        // 7) Vendedores inactivos
+        $vendedoresInactivos = (int) Vendedor::query()->where('estatus', 'inactivo')->count();
+        if ($vendedoresInactivos > 0) {
             $alertas[] = [
-                'tipo' => 'Ventas pendientes',
-                'entidad' => 'publicacion',
-                'motivo' => "Hay {$ventasPendientes} venta(s) en estado pendiente.",
-                'urgente' => $ventasPendientes >= 5,
-                'count' => $ventasPendientes,
+                'id' => 'vendedores_inactivos',
+                'tipo' => 'Vendedores inactivos por revisar',
+                'motivo' => $vendedoresInactivos === 1
+                    ? 'Hay 1 vendedor marcado como inactivo. Confirma si su cuenta debe reactivarse o mantenerse así.'
+                    : "Hay {$vendedoresInactivos} vendedores inactivos. Revisa su situación en el listado de vendedores.",
+                'urgente' => $vendedoresInactivos >= 3,
+                'prioridad' => 50 + min($vendedoresInactivos, 20),
+                'count' => $vendedoresInactivos,
+                'etiqueta' => 'Vendedores',
+                'url' => route('admin.vendedores.index', ['estatus' => 'inactivo']),
             ];
         }
 
-        return $alertas;
+        // 8) Publicaciones ocultas (no disponibles)
+        $ocultas = (int) Articulo::query()->where('disponible', false)->count();
+        if ($ocultas > 0) {
+            $alertas[] = [
+                'id' => 'publicaciones_ocultas',
+                'tipo' => 'Publicaciones ocultas',
+                'motivo' => $ocultas === 1
+                    ? 'Hay 1 prenda oculta del catálogo. Revisa si debe volver a mostrarse.'
+                    : "Hay {$ocultas} prendas ocultas del catálogo. Revisa si alguna se ocultó por error.",
+                'urgente' => false,
+                'prioridad' => 30 + min($ocultas, 15),
+                'count' => $ocultas,
+                'etiqueta' => 'Publicaciones',
+                'url' => route('admin.publicacion.index', ['filtro_visible' => 'ocultas']),
+            ];
+        }
+
+        usort($alertas, function (array $a, array $b) {
+            if (($a['urgente'] ?? false) !== ($b['urgente'] ?? false)) {
+                return ($b['urgente'] ?? false) <=> ($a['urgente'] ?? false);
+            }
+
+            return ($b['prioridad'] ?? 0) <=> ($a['prioridad'] ?? 0);
+        });
+
+        return array_values($alertas);
     }
 
     // ── helpers ──────────────────────────────────────────────────────────

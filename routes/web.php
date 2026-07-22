@@ -27,6 +27,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::view('/usuarios', 'admin.usuario.index')->name('usuarios.index');
 
         Route::view('/vendedores', 'admin.vendedor.index')->name('vendedores.index');
+
+        // Supervisión global (solo admin, middleware role:admin del grupo).
+        Route::view('/ventas-generales', 'admin.ventas.index')->name('ventas.index');
+        Route::view('/resenas', 'admin.resenas.index')->name('resenas.index');
     });
 
 /*

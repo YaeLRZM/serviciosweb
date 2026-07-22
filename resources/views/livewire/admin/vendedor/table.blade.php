@@ -1,7 +1,7 @@
 <?php
 
 use App\Services\Vendedores\VendedoresDataService;
-use function Livewire\Volt\{state, computed};
+use function Livewire\Volt\{state, computed, mount};
 
 state([
     'busqueda' => '',
@@ -9,6 +9,14 @@ state([
     'page' => 1,
     'error' => null,
 ]);
+
+mount(function () {
+    $estatus = (string) request('estatus', 'Todos');
+    if (in_array($estatus, ['Todos', 'activo', 'inactivo'], true)) {
+        $this->estatus = $estatus;
+    }
+    $this->busqueda = (string) request('busqueda', '');
+});
 
 // Estatus reales en PostgreSQL: activo | inactivo
 $estatuses = computed(fn () => ['Todos', 'activo', 'inactivo']);

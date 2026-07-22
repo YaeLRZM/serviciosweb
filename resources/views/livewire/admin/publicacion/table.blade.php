@@ -1,13 +1,22 @@
 <?php
 
 use App\Services\Articulos\ArticulosDataService;
-use function Livewire\Volt\{state, computed};
+use function Livewire\Volt\{state, computed, mount};
 
 state([
     'busqueda' => '',
     'page' => 1,
     'error' => null,
+    'filtro_stock' => '',
+    'filtro_visible' => '',
 ]);
+
+// Filtros desde alertas del dashboard / búsqueda global.
+mount(function () {
+    $this->filtro_stock = (string) request('filtro_stock', '');
+    $this->filtro_visible = (string) request('filtro_visible', '');
+    $this->busqueda = (string) request('busqueda', '');
+});
 
 // Listado local Eloquent (articulos + relaciones). Sin self-HTTP.
 $dataset = computed(function () {
@@ -33,6 +42,21 @@ $filtered = computed(function () {
                 || str_contains(mb_strtolower($item['artesano']['nombre'] ?? ''), mb_strtolower($this->busqueda))
                 || str_contains(mb_strtolower($item['tienda']['nombre'] ?? ''), mb_strtolower($this->busqueda))
                 || str_contains(mb_strtolower($item['region'] ?? ''), mb_strtolower($this->busqueda))
+        ))
+        ->when($this->filtro_stock === 'agotado', fn ($q) => $q->filter(function ($item) {
+            $stock = (int) ($item['stock'] ?? $item['inventario']['stock_actual'] ?? 0);
+
+            return $stock <= 0;
+        }))
+        ->when($this->filtro_stock === 'bajo', fn ($q) => $q->filter(function ($item) {
+            $actual = (int) ($item['inventario']['stock_actual'] ?? $item['stock'] ?? 0);
+            $minimo = (int) ($item['inventario']['stock_minimo'] ?? 0);
+
+            return $minimo > 0 && $actual > 0 && $actual <= $minimo;
+        }))
+        ->when($this->filtro_visible === 'ocultas', fn ($q) => $q->filter(
+            fn ($item) => ($item['disponible'] ?? true) === false
+                || ($item['disponible'] ?? 1) === 0
         ))
         ->values();
 
