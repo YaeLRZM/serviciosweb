@@ -29,6 +29,8 @@ class VentasGeneralesDataService
         'entregado' => 'Entregada',
         'cancelada' => 'Cancelada',
         'completada' => 'Entregada',
+        'devolucion_en_proceso' => 'En devolución',
+        'devuelto' => 'Devuelto',
     ];
 
     public const METODOS_ETIQUETA = [
@@ -108,6 +110,7 @@ class VentasGeneralesDataService
             ->map(fn ($e) => ['id' => $e, 'nombre' => self::ESTADOS_ETIQUETA[$e]])
             ->values()
             ->all();
+        // completada ya filtrada; incluir nuevos estados admin en el filtro.
 
         return compact('tiendas', 'vendedores', 'artesanos', 'clientes', 'estados');
     }
@@ -139,8 +142,33 @@ class VentasGeneralesDataService
             $q->whereDate('created_at', '<=', $filtros['fecha_hasta']);
         }
 
-        if (! empty($filtros['en_proceso'])) {
-            // Pedidos que aún no terminan (ni entregados ni cancelados).
+        // Grupo rápido desde los cuadros superiores (admin / coherencia con métricas).
+        if (! empty($filtros['grupo'])) {
+            $grupo = strtolower(trim((string) $filtros['grupo']));
+            match ($grupo) {
+                // Ventas “reales”: no canceladas ni en proceso/resultado de devolución.
+                'ventas' => $q->whereRaw(
+                    "LOWER(TRIM(COALESCE(estado, ''))) NOT IN (
+                        'cancelada', 'cancelado', 'devolucion_en_proceso', 'devuelto'
+                    )"
+                ),
+                'entregadas' => $q->whereIn('estado', ['entregado', 'completada']),
+                'en_proceso' => $q->whereIn('estado', [
+                    'pendiente',
+                    'pendiente_activacion',
+                    'listo_pagar',
+                    'pago_acreditado',
+                    'en_curso',
+                ]),
+                'canceladas' => $q->whereIn('estado', ['cancelada', 'cancelado']),
+                // Devoluciones: en curso + ya devueltas.
+                'devoluciones' => $q->whereIn('estado', ['devolucion_en_proceso', 'devuelto']),
+                // Monto: mismas filas que suman dinero (sin canceladas ni devueltas).
+                'monto' => $q->soloIngresoValido(),
+                default => null,
+            };
+        } elseif (! empty($filtros['en_proceso'])) {
+            // Pedidos que aún no terminan (ni entregados ni cancelados ni devolución).
             $q->whereIn('estado', [
                 'pendiente',
                 'pendiente_activacion',
@@ -152,6 +180,8 @@ class VentasGeneralesDataService
             $estado = strtolower(trim((string) $filtros['estado']));
             if ($estado === 'entregado') {
                 $q->whereIn('estado', ['entregado', 'completada']);
+            } elseif ($estado === 'devoluciones') {
+                $q->whereIn('estado', ['devolucion_en_proceso', 'devuelto']);
             } else {
                 $q->where('estado', $estado);
             }
@@ -270,17 +300,44 @@ class VentasGeneralesDataService
     {
         $base = $this->baseQuery($filtros);
 
-        $totalCompras = (clone $base)->count();
-        $montoTotal = (float) (clone $base)->sum('total');
+        // Conteos por categoría (misma lógica que el filtro rápido de cada cuadro).
+        // Sin aplicar "grupo" del cuadro activo: las métricas salen del filtro de fechas/búsqueda etc.
+        // Nota: $base ya puede incluir grupo; para tarjetas coherentes usamos la base sin grupo.
+        $filtrosSinGrupo = $filtros;
+        unset($filtrosSinGrupo['grupo'], $filtrosSinGrupo['estado'], $filtrosSinGrupo['en_proceso']);
+        $baseMetricas = $this->baseQuery($filtrosSinGrupo);
 
-        $entregadas = (clone $base)->whereIn('estado', ['entregado', 'completada'])->count();
-        $canceladas = (clone $base)->where('estado', 'cancelada')->count();
-        $enProceso = max(0, $totalCompras - $entregadas - $canceladas);
+        $totalRegistros = (clone $baseMetricas)->count();
 
-        $top = (clone $base)
+        // Ventas = operaciones activas (no canceladas ni devoluciones).
+        $ventas = (clone $baseMetricas)->whereRaw(
+            "LOWER(TRIM(COALESCE(estado, ''))) NOT IN (
+                'cancelada', 'cancelado', 'devolucion_en_proceso', 'devuelto'
+            )"
+        )->count();
+
+        // Monto total = solo ingreso válido (excluye cancelada y devuelto).
+        // “En devolución” sigue contando hasta pasar a “Devuelto”.
+        $montoTotal = (float) (clone $baseMetricas)->soloIngresoValido()->sum('total');
+
+        $entregadas = (clone $baseMetricas)->whereIn('estado', ['entregado', 'completada'])->count();
+        $canceladas = (clone $baseMetricas)->whereIn('estado', ['cancelada', 'cancelado'])->count();
+        $devoluciones = (clone $baseMetricas)->whereIn('estado', ['devolucion_en_proceso', 'devuelto'])->count();
+        $devueltas = (clone $baseMetricas)->where('estado', 'devuelto')->count();
+        $enProceso = (clone $baseMetricas)->whereIn('estado', [
+            'pendiente',
+            'pendiente_activacion',
+            'listo_pagar',
+            'pago_acreditado',
+            'en_curso',
+        ])->count();
+
+        // Ranking por monto de ingreso válido (no inflado por canceladas/devueltas).
+        $top = (clone $baseMetricas)
+            ->soloIngresoValido()
             ->select('tienda_id', DB::raw('COUNT(*) as compras'), DB::raw('SUM(total) as monto'))
             ->groupBy('tienda_id')
-            ->orderByDesc('compras')
+            ->orderByDesc('monto')
             ->limit(5)
             ->get();
 
@@ -306,10 +363,13 @@ class VentasGeneralesDataService
         })->values()->all();
 
         return [
-            'total_compras' => $totalCompras,
+            'total_compras' => $totalRegistros,
+            'ventas' => $ventas,
             'monto_total' => round($montoTotal, 2),
             'entregadas' => $entregadas,
             'canceladas' => $canceladas,
+            'devoluciones' => $devoluciones,
+            'devueltas' => $devueltas,
             'en_proceso' => $enProceso,
             'top_vendedores' => $topVendedores,
         ];
@@ -338,12 +398,14 @@ class VentasGeneralesDataService
         $artesanos = collect($productos)->pluck('artesano')->filter()->unique()->values()->implode(', ');
 
         $tieneResena = $this->ventaTieneResenaCliente($venta);
+        $estado = strtolower(trim((string) $venta->estado));
+        $acciones = app(AdminVentaAccionesService::class);
 
         return [
             'id' => $venta->id,
             'referencia' => 'CMP-'.str_pad((string) $venta->id, 5, '0', STR_PAD_LEFT),
-            'fecha' => optional($venta->created_at)?->timezone(config('app.timezone'))->format('d/m/Y H:i'),
-            'fecha_iso' => optional($venta->created_at)?->toDateString(),
+            'fecha' => $this->formatearFecha($venta->created_at),
+            'fecha_iso' => $venta->created_at?->toDateString(),
             'cliente' => $venta->user?->nombre_completo ?: 'Cliente no disponible',
             'cliente_email' => $venta->user?->email,
             'cliente_id' => $venta->user_id,
@@ -356,12 +418,40 @@ class VentasGeneralesDataService
             'cantidad_total' => $cantidadTotal,
             'lineas' => (int) ($venta->detalle_ventas_count ?? count($productos)),
             'total' => round((float) $venta->total, 2),
-            'estado' => strtolower(trim((string) $venta->estado)),
+            'estado' => $estado,
             'estado_etiqueta' => $this->etiquetaEstado($venta->estado),
             'metodo' => $this->etiquetaMetodo($venta->metodo_pago, $venta->forma_pago?->nombre),
             'codigo_barras' => $venta->codigo_barras,
             'tiene_resena' => $tieneResena,
+            'puede_cancelar' => $acciones->sePuedeCancelar($estado),
+            'puede_devolver' => $acciones->sePuedeIniciarDevolucion($estado),
+            'admin_nota' => $venta->admin_nota,
+            // Fechas opcionales: no encadenar ->format() tras un null (rompia todo el listado).
+            'admin_accion_at' => $this->formatearFecha($venta->admin_accion_at),
+            'next_state_at' => $this->formatearFecha($venta->next_state_at),
+            'next_state_at_iso' => $venta->next_state_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Formatea fechas de forma segura (null → null, sin excepciones en cadena).
+     *
+     * Evita el patrón `optional($f)?->timezone()->format()` que rompe cuando $f es null
+     * (timezone devuelve null y format se llama sobre null).
+     */
+    protected function formatearFecha(mixed $fecha, string $formato = 'd/m/Y H:i'): ?string
+    {
+        if ($fecha === null) {
+            return null;
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($fecha)
+                ->timezone(config('app.timezone'))
+                ->format($formato);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function detalle(int $id): ?array
@@ -372,6 +462,7 @@ class VentasGeneralesDataService
                 'tienda:id,nombre,descripcion',
                 'tienda.vendedors.user:id,nombre,apellido_paterno,apellido_materno,email',
                 'forma_pago:id,nombre',
+                'adminUser:id,nombre,apellido_paterno,apellido_materno,email',
                 'detalle_ventas.articulo:id,nombre,artesano_id,tienda_id,precio,region',
                 'detalle_ventas.articulo.artesano:id,nombre',
                 'detalle_ventas.articulo.resenas' => function ($q) {
@@ -417,6 +508,7 @@ class VentasGeneralesDataService
         $fila['resenas'] = $resenasRelacionadas;
         $fila['cliente_telefono'] = $venta->user?->telefono;
         $fila['tienda_descripcion'] = $venta->tienda?->descripcion;
+        $fila['admin_nombre'] = $venta->adminUser?->nombre_completo;
 
         return $fila;
     }
@@ -427,7 +519,21 @@ class VentasGeneralesDataService
      */
     public function mapearColeccion(Collection $ventas): Collection
     {
-        return $ventas->map(fn (Venta $v) => $this->mapearFila($v))->values();
+        return $ventas
+            ->map(function (Venta $v) {
+                try {
+                    return $this->mapearFila($v);
+                } catch (\Throwable $e) {
+                    // Una fila defectuosa no debe vaciar todo el listado.
+                    \Illuminate\Support\Facades\Log::warning(
+                        'No se pudo mapear venta #'.$v->id.' para el listado admin: '.$e->getMessage()
+                    );
+
+                    return null;
+                }
+            })
+            ->filter()
+            ->values();
     }
 
     protected function ventaTieneResenaCliente(Venta $venta): bool

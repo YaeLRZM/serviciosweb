@@ -67,7 +67,10 @@ class VentaController extends Controller
         }
 
         $ventas = $query->get();
-        $suma = (float) $ventas->sum('total');
+        // Ingreso real: no suma canceladas ni devueltas (sí lista el historial completo).
+        $suma = (float) $ventas
+            ->filter(fn (Venta $v) => Venta::estadoCuentaComoIngreso($v->estado))
+            ->sum('total');
 
         return response()->json([
             'data' => $ventas,

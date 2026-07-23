@@ -47,6 +47,9 @@ class VentaAutoCompleteService
         $n = 0;
         $n += $this->avanzarFlujoNuevo();
         $n += $this->completarLegacyPendientes();
+        // Devoluciones admin: devolucion_en_proceso → devuelto (2 min).
+        $n += app(\App\Services\Admin\AdminVentaAccionesService::class)
+            ->completarDevolucionesVencidas();
 
         return $n;
     }
